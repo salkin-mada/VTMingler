@@ -2,7 +2,7 @@
 // TODO
 // watch out for chars like >´< and >ø< (�) in file names,
    /*the buffer doesnt have a problem but for SoundFileView its trouble*/
-// mulighed for at "parse" midifil (key, vel, timing[dur]) gennem Pdef->Pbind ??
+// mulighed for at "parse" midifil (~key, vel, timing[dur]) gennem Pdef->Pbind ??
 // tjek regex solutionss "s[0-9]+.*.aif".pathMatch
 // regarding mem allocated:
    /*læs størrelse i ram numframes der er loaded via Buffer
@@ -10,28 +10,32 @@
 
 //cadeau til the flying saucer
 (
+~numberOfAudioFilesLoaded = 0;
+~key;
+~basepath;
 "C:/Users/na/Desktop/Supercollider SCD/folder new turn/LYDSERVER.scd".load;
-s.doWhenBooted{/*var basepath;
-    basepath = FileDialog.new({arg ok, path;
+s.doWhenBooted{/*var ~basepath;
+    ~basepath = FileDialog.new({arg ok, path;
     if (ok, {
     PathName.new(path);
     });
     }, fileMode: 2);*/
 
     /*fork*/{
-        var humansAreSlow = 0.015, basepath, key,
-        numberOfAudioFilesFound = 0, numberOfAudioFilesLoaded = 0, numberOfSkippedAudioFiles = 0;
+        var humansAreSlow = 0.000015,
+        numberOfAudioFilesFound = 0, numberOfSkippedAudioFiles = 0;
         var fileSize, totalFileSize = 0, totalFileSizeLoaded = 0;
 
-        var maxLoad = 1000/*4000 max tested*//*MB*/*1e6;
+        var maxLoad = 2500/*4000 max tested*//*MB*/*1e6;
+        //var maxAmountFileLoad = 10;
         // dont mistake this from saying anything about how much memory scsynth eats
 
-        basepath = PathName.new("C:/Users/na/Desktop/lydfiler");// <-------choose folder
+        ~basepath = PathName.new("C:/Users/na/Desktop/lydfiler");// <-------choose folder
 
-        0.8.wait; //start hang time
+        0.1.wait; //start hang time
 
-        // check all files in basepath
-        for (0, basepath.files.size-1, {arg i;
+        // check all files in ~basepath
+        for (0, ~basepath.files.size-1, {arg i;
             humansAreSlow.wait;
             // post window item seperation help
             for (0, 40, {
@@ -40,8 +44,8 @@ s.doWhenBooted{/*var basepath;
             });
             "".postln;
 
-            ("file: "++ /*basepath.files.at(i).folderName++*/"../"++basepath.files.at(i).fileName).postln;
-            fileSize = File.fileSize(basepath.files.at(i).fullPath);
+            ("file: "++ /*~basepath.files.at(i).folderName++*/"../"++~basepath.files.at(i).fileName).postln;
+            fileSize = File.fileSize(~basepath.files.at(i).fullPath);
             ("bytes: "++fileSize).postln;
             ("KB: "++(fileSize/1e3)).postln;
             ("MB: "++(fileSize/1e3/1e3)).postln;
@@ -49,9 +53,9 @@ s.doWhenBooted{/*var basepath;
             ("indexed: "++totalFileSize++"MB").postln;
             ("loaded so far: "++totalFileSizeLoaded++"MB").postln;
 
-            if ( (basepath.files.at(i).extension == "wav")
-                || (basepath.files.at(i).extension == "WAV")
-                || (basepath.files.at(i).extension == "aiff"), {
+            if ( (~basepath.files.at(i).extension == "wav")
+                || (~basepath.files.at(i).extension == "WAV")
+                || (~basepath.files.at(i).extension == "aiff"), {
                     // update
                     numberOfAudioFilesFound = numberOfAudioFilesFound+1;
                     "\tfound a wav/aiff file".postln;
@@ -60,19 +64,19 @@ s.doWhenBooted{/*var basepath;
                     {(totalFileSizeLoaded+(fileSize/1e3/1e3)) <= (maxLoad/1e3/1e3)} {
 
                         // GOTO load sequence
-                        key = 'data'++numberOfAudioFilesLoaded;
+                        ~key = 'data'++~numberOfAudioFilesLoaded;
                         //free buffer if already allocated
-                        if(topEnvironment.includesKey(key.asSymbol), {
-                            topEnvironment.at(key.asSymbol).free;
+                        if(topEnvironment.includesKey(~key.asSymbol), {
+                            topEnvironment.at(~key.asSymbol).free;
                             "\tfree buffer".postln;
                             humansAreSlow.wait;
                         });
                         s.sync;
                         // populate buffer -> load into memory
                         topEnvironment.put(
-                            key.asSymbol,
+                            ~key.asSymbol,
                             Buffer.read(s,
-                                basepath.files.at(i).fullPath
+                                ~basepath.files.at(i).fullPath
                             );
                         );
                         "\tpopulate buffer".postln;
@@ -80,7 +84,7 @@ s.doWhenBooted{/*var basepath;
                         s.sync;
 
                         // update
-                        numberOfAudioFilesLoaded = numberOfAudioFilesLoaded+1;
+                        ~numberOfAudioFilesLoaded = ~numberOfAudioFilesLoaded+1;
                         totalFileSizeLoaded = totalFileSizeLoaded + (fileSize/1e3/1e3);
                     } // case: totalFileSizeLoaded is going to be higher than specified maxLoad;
                     {(totalFileSizeLoaded+fileSize) > (maxLoad/1e3/1e3)} {
@@ -91,9 +95,9 @@ s.doWhenBooted{/*var basepath;
             });
             // if not an audio file
             if (
-                (basepath.files.at(i).extension != "wav")
-                && (basepath.files.at(i).extension != "WAV")
-                && (basepath.files.at(i).extension != "aiff"),{
+                (~basepath.files.at(i).extension != "wav")
+                && (~basepath.files.at(i).extension != "WAV")
+                && (~basepath.files.at(i).extension != "aiff"),{
                     "this is not a wav/aif file, will be skipped".error;
                     humansAreSlow.wait;
             });
@@ -105,22 +109,22 @@ s.doWhenBooted{/*var basepath;
         });
         "\n\n".post;
 
-        ("\tfiles present in specified folder: "++basepath.files.size).postln;
-        ("\tfolders present in specified folder: "++basepath.folders.size).postln;
+        ("\tfiles present in specified folder: "++~basepath.files.size).postln;
+        ("\tfolders present in specified folder: "++~basepath.folders.size).postln;
         ("\n"++totalFileSizeLoaded++"MB loaded, maxLoad is"+(maxLoad/1e3/1e3)++"MB").postln;
         if (numberOfSkippedAudioFiles > 0,{
             ("skipped" + numberOfSkippedAudioFiles + "wav/aiff file(s) due to maxLoad restrictions").postln;
         });
         ("\nfound" + numberOfAudioFilesFound + "wav/aiff file(s)").postln;
-        ("loaded" + numberOfAudioFilesLoaded + "wav/aiff file(s)").postln;
+        ("loaded" + ~numberOfAudioFilesLoaded + "wav/aiff file(s)").postln;
 
         // build synths
-        if (numberOfAudioFilesLoaded > 0,{
+        if (~numberOfAudioFilesLoaded > 0,{
             humansAreSlow.wait;
             "\nbuilding a mono, a stereo and two efx synthdefs".postln;
 
 
-            SynthDef(\mono, {
+            ~mono = SynthDef(\mono, {
                 |
                 bufnum, direction = 1, out = 0, effectBus, rate = 1, spread = 1, pan = 0, amp = 0.5,
                 attack = 0.2, sustain = 0.5, release = 1.0, startPos = 0,
@@ -144,7 +148,7 @@ s.doWhenBooted{/*var basepath;
                 Out.ar(effectBus, sig*(1 - direction));
             }).add;
 
-            SynthDef(\stereo, {
+            ~stereo = SynthDef(\stereo, {
                 |
                 bufnum, direction = 1, out = 0, effectBus, rate = 1, spread = 1, pan = 0, amp = 0.5,
                 attack = 0.2, sustain = 0.5, release = 1.0, startPos = 0,
@@ -208,16 +212,16 @@ s.doWhenBooted{/*var basepath;
 
         /*w = Window().front;
 
-        a = Array.fill(numberOfAudioFilesLoaded, {|i|
+        a = Array.fill(~numberOfAudioFilesLoaded, {|i|
         var result;
-        key = ('data'++i);
-        ("making view of"+basepath.files.at(i)).postln;
+        ~key = ('data'++i);
+        ("making view of"+~basepath.files.at(i)).postln;
 
-        e = topEnvironment[key.asSymbol];
+        e = topEnvironment[~key.asSymbol];
         result = SoundFileView(w).load(
-        filename: topEnvironment[key.asSymbol].path,
+        filename: topEnvironment[~key.asSymbol].path,
         startFrame: 0,
-        frames: topEnvironment[key.asSymbol].numFrames,
+        frames: topEnvironment[~key.asSymbol].numFrames,
         /*block: 1000*/);
         result
         .gridOn_(true)
@@ -226,7 +230,7 @@ s.doWhenBooted{/*var basepath;
         .rmsColor_(Color(0.0,1.0,0));
         });
 
-        b = Array.fill(numberOfAudioFilesLoaded, {|i|
+        b = Array.fill(~numberOfAudioFilesLoaded, {|i|
         var result;
         result = HLayout(
         VLayout(*{ Slider(w, Rect(0, 0, 230, 20)).minSize_(Size(130, 20)) } !3),
@@ -237,42 +241,68 @@ s.doWhenBooted{/*var basepath;
         w.layout = HLayout(VLayout(*b));*/
 
         //GridLayout version
-        //w = View(bounds: Rect(300,Window.screenBounds.height-980,800,900)).front;
-        w = Window(
-        bounds: Rect(300,Window.screenBounds.height-980,800,900),
+        w = View(bounds: Rect(300,Window.screenBounds.height-480)).front;
+        /*w = Window(
+        bounds: Rect(300,Window.screenBounds.height-480),
         scroll: true
-        ).front;
+        ).front;*/
 
 
         a ={SoundFileView.new
             .gridOn_(true)
-            .gridColor_(Color(0.4, 0.0, 0.4, 1))
+            .gridColor_(Color(0.1, 0.4, 0.4, 1))
             .peakColor_(Color(0.2, 0.8, 0.1, 1))
             .rmsColor_(Color(0.0,1.0,0))
             /*.fixedHeight_(100);*/
-        } ! numberOfAudioFilesLoaded;
-
+            /*.fixedWidth_(100)*/
+        } ! ~numberOfAudioFilesLoaded;
         a.do({arg item, i;
             var result;
-            key = ('data'++i);
-            ("loading view for:"+topEnvironment[key.asSymbol].path).postln;
-            e = topEnvironment[key.asSymbol];
+            ~key = ('data'++i);
+            ("loading view for:"+topEnvironment[~key.asSymbol].path).postln;
+            e = topEnvironment[~key.asSymbol];
             a[i].load(
-                filename: topEnvironment[key.asSymbol].path,
+                filename: topEnvironment[~key.asSymbol].path,
                 startFrame: 0,
-                frames: topEnvironment[key.asSymbol].numFrames,
-            /*block: 1000*/);
+                frames: topEnvironment[~key.asSymbol].numFrames,
+            /*block: 1e4*/);
             result;
         });
 
-        g = GridLayout.new;
-        a.clump(5).do({arg item, i;
+        t = {TextField(bounds: Rect(0, 0, 450, 10))} ! ~numberOfAudioFilesLoaded;
+        t.do({arg item, i;
+            var result;
+            ~key = ('data'++i);
+            t[i].string = (~basepath.files.at(i).fileName).asString;
+            t[i].font = Font("Segoe UI Black", 18);
+            t[i].align = \center;
+            t[i].background = Color(0.6,0.4,1.0, 0.3);
+
+        });
+
+        g = GridLayout.new.hSpacing_(0).vSpacing_(0);
+        a.clump(8).do({arg item, i;
             item.do{arg jtem, j;
-                g.add(jtem, i, j);
+                g.add(jtem, i, j)
+                .setMinRowHeight(i, 40)
+                .setMinColumnWidth(j, 80); // makes no differnce=?
+            };
+        });
+        t.clump(8).do({arg item, i;
+            item.do{arg jtem, j;
+                g.add(jtem, i, j).setAlignment(jtem, \top)
             };
         });
 
         w.layout = g;
+
+        // view listener
+        /*loop{
+        // ring til view text field background
+
+            0.05.wait;
+        };*/ // måske bruge SkipJack her altså.. måske dette skal ske i \layere
+
 
     }.fork(AppClock)
 })
@@ -281,6 +311,7 @@ Pdef(\layere).fadeTime = 10.0;
 Pdef(\layere).stop;
 
 (
+
 Pdef(\layere, {
     var bus, effectbus, dir = 1.0;
 
@@ -311,30 +342,30 @@ Pdef(\layere, {
             \send, Pfunc({|envir|
                 dir = envir.direction;
             }),
-            \file, Pxrand((1..52), inf),/*Pstep(
+            \file, Pxrand((1..10), inf),/*Pstep(
                 Pxrand((1..49), inf), 12, inf
             ),*/// // eksempel  youyou.wav weird channel behavior CHECK IT OUT
             \bufnum,Pfunc({|envir|
-                var key = ('data'++(envir.file-1));
-                topEnvironment[key.asSymbol].path.postln;
-                topEnvironment[key.asSymbol]
+                var ~key = ('data'++(envir.file-1));
+                topEnvironment[~key.asSymbol].path.postln;
+                topEnvironment[~key.asSymbol]
                 //topEnvironment[envir.file]
             }),
             \instrument, Pfunc({|envir|
-                var key = ('data'++envir.file);
+                var ~key = ('data'++envir.file);
                 var result;
-                var numChannels = topEnvironment[key.asSymbol].numChannels;
+                var numChannels = topEnvironment[~key.asSymbol].numChannels;
                 //var numChannels = topEnvironment[envir.file].numChannels;
 
                 switch(numChannels,
                     1, {
-                        result = 'mono';
+                        result = ~mono; // 'mono'
                     },
                     2, {
-                        result = 'stereo';
+                        result = ~stereo; // 'stereo'
                     },
                     {
-                        result = 'mono';
+                        result = ~mono; // 'mono'
                     }
                 );
 
@@ -352,6 +383,11 @@ Pdef(\layere, {
                 });*/
                 result;
             }),
+            /*\callBackForView, Pfunc({|envir|
+                if (Pdef(\layere).isPlaying == true, {
+
+                });
+            })*/
         ),
         Pbind( // efx
             \out, bus,
@@ -380,7 +416,7 @@ Pdef(\layere, {
             }),
         )
     ])/*.trace*/;
-}).play(TempoClock(132/60*4))
+}).play(TempoClock(132/60*4));
 )
 
 // dictionary monstro questionmark
@@ -434,47 +470,3 @@ o.free;
 b.free;
 x.free;
 y.free; */
-
-
-
-
-
-
-
-(
-
-var num = 10;
-var file = 0;
-var key;
-w = Window().front;
-
-a = Array.fill(num, {|i|
-    var result;
-    key = ('data'++i);
-    ("making soundFileView of "++topEnvironment[key.asSymbol].).postln;
-
-    e = topEnvironment[key.asSymbol];
-    result = SoundFileView(w).load(
-        filename: topEnvironment[key.asSymbol].path,
-        startFrame: 0,
-        frames: topEnvironment[key.asSymbol].numFrames,
-    /*block: 1000*/);
-    result
-    .gridOn_(true)
-    .gridColor_(Color(0.4, 0.0, 0.4, 1))
-    .peakColor_(Color(0.2, 0.8, 0.1, 1))
-    .rmsColor_(Color(0.0,1.0,0));
-});
-
-b = Array.fill(num, {|i|
-    var result;
-    result = HLayout(
-        VLayout(*{ Slider(w, Rect(0, 0, 230, 20)).minSize_(Size(130, 20)) } !3),
-        a[i].value);
-    result;
-});
-
-w.layout = HLayout(VLayout(*b));
-
-
-)
