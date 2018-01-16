@@ -1,9 +1,12 @@
 
 // TODO
-// "parse" midifil (key, vel, timing[dur]) gennem Pdef->Pbind ??
+// watch out for chars like >´< and >ø< (�) in file names,
+   /*the buffer doesnt have a problem but for SoundFileView its trouble*/
+// mulighed for at "parse" midifil (key, vel, timing[dur]) gennem Pdef->Pbind ??
 // tjek regex solutionss "s[0-9]+.*.aif".pathMatch
-// læs størrelse numframes der er loaded via Buffer
-// hvis Buffer ikke kan sige noget om filens frame størrelse før efter den er loaded brug SoundFile til dette.
+// regarding mem allocated:
+   /*læs størrelse i ram numframes der er loaded via Buffer
+   hvis Buffer ikke kan sige noget om filens frame størrelse før efter den er loaded brug SoundFile til dette?*/
 
 //cadeau til the flying saucer
 (
@@ -16,11 +19,11 @@ s.doWhenBooted{/*var basepath;
     }, fileMode: 2);*/
 
     /*fork*/{
-        var humansAreSlow = 0.025, basepath, key,
+        var humansAreSlow = 0.015, basepath, key,
         numberOfAudioFilesFound = 0, numberOfAudioFilesLoaded = 0, numberOfSkippedAudioFiles = 0;
         var fileSize, totalFileSize = 0, totalFileSizeLoaded = 0;
 
-        var maxLoad = 2200/*1890*//*MB*/*1e6;
+        var maxLoad = 1000/*4000 max tested*//*MB*/*1e6;
         // dont mistake this from saying anything about how much memory scsynth eats
 
         basepath = PathName.new("C:/Users/na/Desktop/lydfiler");// <-------choose folder
@@ -88,12 +91,12 @@ s.doWhenBooted{/*var basepath;
             });
             // if not an audio file
             if (
-                    (basepath.files.at(i).extension != "wav")
-                    && (basepath.files.at(i).extension != "WAV")
-                    && (basepath.files.at(i).extension != "aiff"),{
-                        "this is not a wav/aif file, will be skipped".error;
-                        humansAreSlow.wait;
-                });
+                (basepath.files.at(i).extension != "wav")
+                && (basepath.files.at(i).extension != "WAV")
+                && (basepath.files.at(i).extension != "aiff"),{
+                    "this is not a wav/aif file, will be skipped".error;
+                    humansAreSlow.wait;
+            });
         });
         // post window item seperation help
         for (0, 40, {
@@ -199,36 +202,77 @@ s.doWhenBooted{/*var basepath;
 
         humansAreSlow.wait;
         "\n\t\tdone".postln;
+        (humansAreSlow*2).wait;
+        "\n\t\tview time --->".postln;
+        (humansAreSlow*2).wait;
 
-        w = Window().front;
+        /*w = Window().front;
 
         a = Array.fill(numberOfAudioFilesLoaded, {|i|
+        var result;
+        key = ('data'++i);
+        ("making view of"+basepath.files.at(i)).postln;
+
+        e = topEnvironment[key.asSymbol];
+        result = SoundFileView(w).load(
+        filename: topEnvironment[key.asSymbol].path,
+        startFrame: 0,
+        frames: topEnvironment[key.asSymbol].numFrames,
+        /*block: 1000*/);
+        result
+        .gridOn_(true)
+        .gridColor_(Color(0.4, 0.0, 0.4, 1))
+        .peakColor_(Color(0.2, 0.8, 0.1, 1))
+        .rmsColor_(Color(0.0,1.0,0));
+        });
+
+        b = Array.fill(numberOfAudioFilesLoaded, {|i|
+        var result;
+        result = HLayout(
+        VLayout(*{ Slider(w, Rect(0, 0, 230, 20)).minSize_(Size(130, 20)) } !3),
+        a[i].value);
+        result;
+        });
+
+        w.layout = HLayout(VLayout(*b));*/
+
+        //GridLayout version
+        //w = View(bounds: Rect(300,Window.screenBounds.height-980,800,900)).front;
+        w = Window(
+        bounds: Rect(300,Window.screenBounds.height-980,800,900),
+        scroll: true
+        ).front;
+
+
+        a ={SoundFileView.new
+            .gridOn_(true)
+            .gridColor_(Color(0.4, 0.0, 0.4, 1))
+            .peakColor_(Color(0.2, 0.8, 0.1, 1))
+            .rmsColor_(Color(0.0,1.0,0))
+            /*.fixedHeight_(100);*/
+        } ! numberOfAudioFilesLoaded;
+
+        a.do({arg item, i;
             var result;
             key = ('data'++i);
-            ("making view of"+basepath.files.at(i)).postln;
-
+            ("loading view for:"+topEnvironment[key.asSymbol].path).postln;
             e = topEnvironment[key.asSymbol];
-            result = SoundFileView(w).load(
+            a[i].load(
                 filename: topEnvironment[key.asSymbol].path,
                 startFrame: 0,
                 frames: topEnvironment[key.asSymbol].numFrames,
             /*block: 1000*/);
-            result
-            .gridOn_(true)
-            .gridColor_(Color(0.4, 0.0, 0.4, 1))
-            .peakColor_(Color(0.2, 0.8, 0.1, 1))
-            .rmsColor_(Color(0.0,1.0,0));
-        });
-
-        b = Array.fill(numberOfAudioFilesLoaded, {|i|
-            var result;
-            result = HLayout(
-                VLayout(*{ Slider(w, Rect(0, 0, 230, 20)).minSize_(Size(130, 20)) } !3),
-                a[i].value);
             result;
         });
 
-        w.layout = HLayout(VLayout(*b));
+        g = GridLayout.new;
+        a.clump(5).do({arg item, i;
+            item.do{arg jtem, j;
+                g.add(jtem, i, j);
+            };
+        });
+
+        w.layout = g;
 
     }.fork(AppClock)
 })
@@ -254,22 +298,22 @@ Pdef(\layere, {
         Pbind( // synths
             \out, bus,
             \effectBus, effectbus,
-            \dur, 0.5,//13,//12.7,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
+            \dur, 15,//13,//12.7,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
             \amp, Pseq([0.9,0.5,0.3,0.8], inf)* 0.7,
-            \rate, 0.5,//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,3,4], inf),
+            \rate, 0.4,//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,3,4], inf),
             \startPos, Pseq([0.3, 0.5, 0.7, 0.5, 0.29, 0.99, 0.01], inf),
-            \attack, 0.02,//2.9,
-            \sustain, 0.001,
-            \release, 0.02,//6.5,
+            \attack, 4.02,//2.9,
+            \sustain, 2.001,
+            \release, 8.02,//6.5,
             \pan, Pxrand([-1.0, -0.5, 0.0, 0.5, 1.0], inf),
             \spread, 0.6,
             \direction, Pxrand([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
             \send, Pfunc({|envir|
                 dir = envir.direction;
             }),
-            \file, Pstep(
-                Pxrand((1..35), inf), 12, inf
-            ),//Pxrand((1..35), inf), // eksempel  youyou.wav weird channel behavior CHECK IT OUT
+            \file, Pxrand((1..52), inf),/*Pstep(
+                Pxrand((1..49), inf), 12, inf
+            ),*/// // eksempel  youyou.wav weird channel behavior CHECK IT OUT
             \bufnum,Pfunc({|envir|
                 var key = ('data'++(envir.file-1));
                 topEnvironment[key.asSymbol].path.postln;
@@ -295,27 +339,27 @@ Pdef(\layere, {
                 );
 
                 /*if (envir.direction < 1,{
-                    "\t\tefx-on".postln;
-                    "\t\t baby".postln;
-                    Synth.after(1/*result??*/, \efx,
-                        [
-                            \attack, 0.001,
-                            \sustain, 0.1,
-                            \release, 6.1,//envir.release,
-                            \amp, 0.1
-                        ]
-                    );
+                "\t\tefx-on".postln;
+                "\t\t baby".postln;
+                Synth.after(1/*result??*/, \efx,
+                [
+                \attack, 0.001,
+                \sustain, 0.1,
+                \release, 6.1,//envir.release,
+                \amp, 0.1
+                ]
+                );
                 });*/
                 result;
             }),
         ),
         Pbind( // efx
             \out, bus,
-            \dur, 14, //13,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
+            \dur, 30, //13,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
             \amp, 0.9,
             \attack, 0.01,//2.5,
             \sustain, 0.02,//2.0,
-            \release, 0.1, //7.0,
+            \release, 8.1, //7.0,
             \pan, Pxrand([-1.0, -0.5, 0.0, 0.5, 1.0], inf),
             \spread, 0.3,
             \efx, Pseq([1,1,1,0], inf),
@@ -354,15 +398,15 @@ Pdef(\layere, {
 /*(
 // the analyzer
 SynthDef(\ampreport, {|in|
-        var input = In.ar(in, 1);
-        var trigger = LFPulse.kr(10);
-        var ampTrack = Amplitude.kr(input);
-        var send = SendReply.kr(trigger, '/current_amp', [ ampTrack ]);
+var input = In.ar(in, 1);
+var trigger = LFPulse.kr(10);
+var ampTrack = Amplitude.kr(input);
+var send = SendReply.kr(trigger, '/current_amp', [ ampTrack ]);
 }).add;
 
 // a test sound (you will not hear this, because it’s only send to the analyzer)
 SynthDef(\simpleSine, {|out = 0, freq = 400, amp = 0.2|
-        Out.ar(out, SinOsc.ar(freq, mul: amp));
+Out.ar(out, SinOsc.ar(freq, mul: amp));
 }).add;
 )
 
@@ -376,8 +420,8 @@ o = OSCFunc({|msg| Pdefn(\current_amp, msg[3]); }, '/current_amp');
 
 (
 e = Pbind(
-        \degree, Prand(Array.series(20, 0, 1), inf),
-        \dur, Pdefn(\current_amp)
+\degree, Prand(Array.series(20, 0, 1), inf),
+\dur, Pdefn(\current_amp)
 ).play
 )
 
@@ -414,7 +458,7 @@ a = Array.fill(num, {|i|
         filename: topEnvironment[key.asSymbol].path,
         startFrame: 0,
         frames: topEnvironment[key.asSymbol].numFrames,
-        /*block: 1000*/);
+    /*block: 1000*/);
     result
     .gridOn_(true)
     .gridColor_(Color(0.4, 0.0, 0.4, 1))
