@@ -210,37 +210,10 @@ s.doWhenBooted{/*var ~basepath;
         "\n\t\tview time --->".postln;
         (humansAreSlow*2).wait;
 
-        /*w = Window().front;
+        /*---      ---*/
+        /*--- VIEW ---*/
+        /*---      ---*/
 
-        a = Array.fill(~numberOfAudioFilesLoaded, {|i|
-        var result;
-        ~key = ('data'++i);
-        ("making view of"+~basepath.files.at(i)).postln;
-
-        e = topEnvironment[~key.asSymbol];
-        result = SoundFileView(w).load(
-        filename: topEnvironment[~key.asSymbol].path,
-        startFrame: 0,
-        frames: topEnvironment[~key.asSymbol].numFrames,
-        /*block: 1000*/);
-        result
-        .gridOn_(true)
-        .gridColor_(Color(0.4, 0.0, 0.4, 1))
-        .peakColor_(Color(0.2, 0.8, 0.1, 1))
-        .rmsColor_(Color(0.0,1.0,0));
-        });
-
-        b = Array.fill(~numberOfAudioFilesLoaded, {|i|
-        var result;
-        result = HLayout(
-        VLayout(*{ Slider(w, Rect(0, 0, 230, 20)).minSize_(Size(130, 20)) } !3),
-        a[i].value);
-        result;
-        });
-
-        w.layout = HLayout(VLayout(*b));*/
-
-        //GridLayout version
         w = View(bounds: Rect(300,Window.screenBounds.height-480)).front;
         /*w = Window(
         bounds: Rect(300,Window.screenBounds.height-480),
@@ -342,19 +315,20 @@ Pdef(\layere, {
             \send, Pfunc({|envir|
                 dir = envir.direction;
             }),
-            \file, Pxrand((1..10), inf),/*Pstep(
+            \file, Pxrand((1..32), inf),/*Pstep(
                 Pxrand((1..49), inf), 12, inf
             ),*/// // eksempel  youyou.wav weird channel behavior CHECK IT OUT
             \bufnum,Pfunc({|envir|
-                var ~key = ('data'++(envir.file-1));
+                ~key = ('data'++(envir.file-1));
                 topEnvironment[~key.asSymbol].path.postln;
                 topEnvironment[~key.asSymbol]
                 //topEnvironment[envir.file]
             }),
             \instrument, Pfunc({|envir|
-                var ~key = ('data'++envir.file);
-                var result;
-                var numChannels = topEnvironment[~key.asSymbol].numChannels;
+                var result, numChannels;
+                ~key = ('data'++envir.file);
+
+                numChannels = topEnvironment[~key.asSymbol].numChannels;
                 //var numChannels = topEnvironment[envir.file].numChannels;
 
                 switch(numChannels,
