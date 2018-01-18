@@ -1,18 +1,16 @@
 
 // TODO
 // watch out for chars like >´< and >ø< (�) in file names,
-   /*the buffer doesnt have a problem but for SoundFileView its trouble*/
+/*the buffer doesnt have a problem but for SoundFileView its trouble*/
 // mulighed for at "parse" midifil (~key, vel, timing[dur]) gennem Pdef->Pbind ??
 // tjek regex solutionss "s[0-9]+.*.aif".pathMatch
 // regarding mem allocated:
-   /*læs størrelse i ram numframes der er loaded via Buffer
-   hvis Buffer ikke kan sige noget om filens frame størrelse før efter den er loaded brug SoundFile til dette?*/
+/*læs størrelse i ram numframes der er loaded via Buffer
+hvis Buffer ikke kan sige noget om filens frame størrelse før efter den er loaded brug SoundFile til dette?*/
 
 //cadeau til the flying saucer
 (
-~numberOfAudioFilesLoaded = 0;
-~key;
-~basepath;
+~numberOfAudioFilesLoaded = 0; ~key; ~basepath; ~makeView; ~viewOn = 1;
 "C:/Users/na/Desktop/Supercollider SCD/folder new turn/LYDSERVER.scd".load;
 s.doWhenBooted{/*var ~basepath;
     ~basepath = FileDialog.new({arg ok, path;
@@ -21,12 +19,12 @@ s.doWhenBooted{/*var ~basepath;
     });
     }, fileMode: 2);*/
 
-    /*fork*/{
-        var humansAreSlow = 0.000015,
+    fork{
+        var humansAreSlow = 0.00015,
         numberOfAudioFilesFound = 0, numberOfSkippedAudioFiles = 0;
         var fileSize, totalFileSize = 0, totalFileSizeLoaded = 0;
 
-        var maxLoad = 2500/*4000 max tested*//*MB*/*1e6;
+        var maxLoad = 300/*4000 max tested*//*MB*/*1e6;
         //var maxAmountFileLoad = 10;
         // dont mistake this from saying anything about how much memory scsynth eats
 
@@ -206,79 +204,97 @@ s.doWhenBooted{/*var ~basepath;
 
         humansAreSlow.wait;
         "\n\t\tdone".postln;
-        (humansAreSlow*2).wait;
-        "\n\t\tview time --->".postln;
-        (humansAreSlow*2).wait;
-
-        /*---      ---*/
-        /*--- VIEW ---*/
-        /*---      ---*/
-
-        w = View(bounds: Rect(300,Window.screenBounds.height-480)).front;
-        /*w = Window(
-        bounds: Rect(300,Window.screenBounds.height-480),
-        scroll: true
-        ).front;*/
 
 
-        a ={SoundFileView.new
-            .gridOn_(true)
-            .gridColor_(Color(0.1, 0.4, 0.4, 1))
-            .peakColor_(Color(0.2, 0.8, 0.1, 1))
-            .rmsColor_(Color(0.0,1.0,0))
-            /*.fixedHeight_(100);*/
-            /*.fixedWidth_(100)*/
-        } ! ~numberOfAudioFilesLoaded;
-        a.do({arg item, i;
-            var result;
-            ~key = ('data'++i);
-            ("loading view for:"+topEnvironment[~key.asSymbol].path).postln;
-            e = topEnvironment[~key.asSymbol];
-            a[i].load(
-                filename: topEnvironment[~key.asSymbol].path,
-                startFrame: 0,
-                frames: topEnvironment[~key.asSymbol].numFrames,
-            /*block: 1e4*/);
-            result;
+
+        if (~viewOn == 1, {
+           ~makeView = /*Routine(*/{
+                0.25.wait;
+                "\n\t\tview time --->".postln;
+                0.25.wait;
+
+                /*---      ---*/
+                /*--- VIEW ---*/
+                /*---      ---*/
+
+                w = View(bounds: Rect(300,Window.screenBounds.height-480))
+				.name_("                number of files loaded:"+~numberOfAudioFilesLoaded)
+				.front;
+                /*w = Window(
+                bounds: Rect(300,800/*Window.screenBounds.height-780*/),
+					// setting bounds with Rect on Window, doesnt work in 3.9.0
+                scroll: true
+                ).front;*/
+
+
+                a ={SoundFileView.new
+                    .gridOn_(true)
+                    .gridColor_(Color(0.1, 0.4, 0.4, 1))
+                    .peakColor_(Color(0.2, 0.8, 0.1, 1))
+                    .rmsColor_(Color(0.0,1.0,0))
+                    /*.fixedHeight_(100);*/
+                    /*.fixedWidth_(100)*/
+                } ! ~numberOfAudioFilesLoaded;
+                a.do({arg item, i;
+                    var result;
+                    ~key = ('data'++i);
+                    ("loading view for:"+topEnvironment[~key.asSymbol].path).postln;
+                    e = topEnvironment[~key.asSymbol];
+                    a[i].load(
+                        filename: topEnvironment[~key.asSymbol].path,
+                        startFrame: 0,
+                        frames: topEnvironment[~key.asSymbol].numFrames,
+                    /*block: 1e4*/);
+                    result;
+                });
+
+                t = {TextField(bounds: Rect(0, 0, 450, 10))} ! ~numberOfAudioFilesLoaded;
+                t.do({arg item, i;
+                    var result;
+                    ~key = ('data'++i);
+                    t[i].string = (~basepath.files.at(i).fileName).asString;
+                    t[i].font = Font("Segoe UI Black", 18);
+                    t[i].align = \center;
+                    t[i].background = Color(0.6,0.4,1.0, 0.3);
+
+                });
+
+                g = GridLayout.new.hSpacing_(0).vSpacing_(0);
+                a.clump(8).do({arg item, i;
+                    item.do{arg jtem, j;
+                        g.add(jtem, i, j)
+                        .setMinRowHeight(i, 40)
+                        .setMinColumnWidth(j, 80); // makes no differnce=?
+                    };
+                });
+                t.clump(8).do({arg item, i;
+                    item.do{arg jtem, j;
+                        g.add(jtem, i, j).setAlignment(jtem, \top)
+                    };
+                });
+
+                w.layout = g;
+
+                // view listener
+                /*loop{
+                // ring til view text field background
+
+                0.05.wait;
+                };*/ // måske bruge SkipJack her altså.. måske dette skal ske i \layere
+            }/*)*/.fork(AppClock)/*.play(AppClock);*/
+
+
         });
 
-        t = {TextField(bounds: Rect(0, 0, 450, 10))} ! ~numberOfAudioFilesLoaded;
-        t.do({arg item, i;
-            var result;
-            ~key = ('data'++i);
-            t[i].string = (~basepath.files.at(i).fileName).asString;
-            t[i].font = Font("Segoe UI Black", 18);
-            t[i].align = \center;
-            t[i].background = Color(0.6,0.4,1.0, 0.3);
-
-        });
-
-        g = GridLayout.new.hSpacing_(0).vSpacing_(0);
-        a.clump(8).do({arg item, i;
-            item.do{arg jtem, j;
-                g.add(jtem, i, j)
-                .setMinRowHeight(i, 40)
-                .setMinColumnWidth(j, 80); // makes no differnce=?
-            };
-        });
-        t.clump(8).do({arg item, i;
-            item.do{arg jtem, j;
-                g.add(jtem, i, j).setAlignment(jtem, \top)
-            };
-        });
-
-        w.layout = g;
-
-        // view listener
-        /*loop{
-        // ring til view text field background
-
-            0.05.wait;
-        };*/ // måske bruge SkipJack her altså.. måske dette skal ske i \layere
 
 
-    }.fork(AppClock)
+    }/*.fork(AppClock)*/
 })
+
+
+~makeView.reset;
+~makeView.play(AppClock);
+
 
 Pdef(\layere).fadeTime = 10.0;
 Pdef(\layere).stop;
@@ -288,7 +304,7 @@ Pdef(\layere).stop;
 Pdef(\layere, {
     var bus, effectbus, dir = 1.0;
 
-    bus = 2; // stereo ud
+    bus = 2; // stereo ud til summing
     effectbus = 20; // stereo
 
     Ndef(\summing, {var in, sig;
@@ -302,22 +318,20 @@ Pdef(\layere, {
         Pbind( // synths
             \out, bus,
             \effectBus, effectbus,
-            \dur, 15,//13,//12.7,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
+            \dur, 18,//13,//12.7,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
             \amp, Pseq([0.9,0.5,0.3,0.8], inf)* 0.7,
-            \rate, 0.4,//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,3,4], inf),
+            \rate, Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,3,4], inf),
             \startPos, Pseq([0.3, 0.5, 0.7, 0.5, 0.29, 0.99, 0.01], inf),
-            \attack, 4.02,//2.9,
-            \sustain, 2.001,
-            \release, 8.02,//6.5,
+            \attack, 0.02,//2.9,
+            \sustain, 7.001,
+            \release, 0.02,//6.5,
             \pan, Pxrand([-1.0, -0.5, 0.0, 0.5, 1.0], inf),
             \spread, 0.6,
             \direction, Pxrand([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
             \send, Pfunc({|envir|
                 dir = envir.direction;
             }),
-            \file, Pxrand((1..32), inf),/*Pstep(
-                Pxrand((1..49), inf), 12, inf
-            ),*/// // eksempel  youyou.wav weird channel behavior CHECK IT OUT
+			\file, Pseq([44,43,42,41], inf),//Pxrand((1..32), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
             \bufnum,Pfunc({|envir|
                 ~key = ('data'++(envir.file-1));
                 topEnvironment[~key.asSymbol].path.postln;
@@ -357,15 +371,10 @@ Pdef(\layere, {
                 });*/
                 result;
             }),
-            /*\callBackForView, Pfunc({|envir|
-                if (Pdef(\layere).isPlaying == true, {
-
-                });
-            })*/
         ),
         Pbind( // efx
             \out, bus,
-            \dur, 30, //13,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
+            \dur, 18, //13,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
             \amp, 0.9,
             \attack, 0.01,//2.5,
             \sustain, 0.02,//2.0,
