@@ -28,7 +28,7 @@ s.doWhenBooted{/*var ~basepath;
         //var maxAmountFileLoad = 10;
         // dont mistake this from saying anything about how much memory scsynth eats
 
-        ~basepath = PathName.new("C:/Users/na/Desktop/lydfiler");// <-------choose folder
+        ~basepath = PathName.new("C:/Users/na/Desktop/lydfiler/14");// <-------choose folder
 
         0.1.wait; //start hang time
 
@@ -252,7 +252,7 @@ s.doWhenBooted{/*var ~basepath;
                 t.do({arg item, i;
                     var result;
                     ~key = ('data'++i);
-                    t[i].string = (~basepath.files.at(i).fileName).asString;
+					t[i].string = (~key+"-->"+~basepath.files.at(i).fileName).asString;
                     t[i].font = Font("Segoe UI Black", 18);
                     t[i].align = \center;
                     t[i].background = Color(0.6,0.4,1.0, 0.3);
@@ -320,18 +320,18 @@ Pdef(\layere, {
             \effectBus, effectbus,
             \dur, 18,//13,//12.7,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
             \amp, Pseq([0.9,0.5,0.3,0.8], inf)* 0.7,
-            \rate, Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,3,4], inf),
+            \rate, Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,3,4,6,9,10, 12,14,16,20], inf),
             \startPos, Pseq([0.3, 0.5, 0.7, 0.5, 0.29, 0.99, 0.01], inf),
-            \attack, 0.02,//2.9,
-            \sustain, 7.001,
-            \release, 0.02,//6.5,
+            \attack, 4.02,//2.9,
+            \sustain, 10.001,
+            \release, 4.02,//6.5,
             \pan, Pxrand([-1.0, -0.5, 0.0, 0.5, 1.0], inf),
             \spread, 0.6,
             \direction, Pxrand([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
             \send, Pfunc({|envir|
                 dir = envir.direction;
             }),
-			\file, Pseq([44,43,42,41], inf),//Pxrand((1..32), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
+			\file, 1,//Pseq([44,43,42,41], inf),//Pxrand((1..32), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
             \bufnum,Pfunc({|envir|
                 ~key = ('data'++(envir.file-1));
                 topEnvironment[~key.asSymbol].path.postln;
