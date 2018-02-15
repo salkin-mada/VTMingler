@@ -10,7 +10,7 @@ hvis Buffer ikke kan sige noget om filens frame størrelse før efter den er loa
 
 //cadeau til the flying saucer
 (
-~numberOfAudioFilesLoaded = 0; ~key; ~basepath; ~makeView; ~viewOn = 1;
+~numberOfAudioFilesLoaded = 0; ~key; ~basepath; ~makeView; ~viewOn = 0;
 "C:/Users/na/Desktop/Supercollider SCD/folder new turn/LYDSERVER.scd".load;
 s.doWhenBooted{/*var ~basepath;
 	~basepath = FileDialog.new({arg ok, path;
@@ -24,7 +24,7 @@ s.doWhenBooted{/*var ~basepath;
 		numberOfAudioFilesFound = 0, numberOfSkippedAudioFiles = 0;
 		var fileSize, totalFileSize = 0, totalFileSizeLoaded = 0;
 
-		var maxLoad = 120/*4000 max tested*//*MB*/*1e6;
+		var maxLoad = 4000/*4000 max tested*//*MB*/*1e6;
 		//var maxAmountFileLoad = 10;
 		// dont mistake this from saying anything about how much memory scsynth eats
 
@@ -197,7 +197,7 @@ s.doWhenBooted{/*var ~basepath;
 				sig = Convolution2.ar(sig*0.8, SinOsc.ar([5e3,6e3,7e3,8e3,9e3])*sig*0.8, 1, 2048, 0.05);
 				sig = sig.softclip;
 				env = EnvGen.ar(Env([0,1,1,0], [attack,sustain,release], 'lin'), doneAction: 2);
-				Out.ar(out, Splay.ar(sig*env, spread: spread, center: pan, level: amp));
+				Out.ar(out, Splay.ar(LeakDC.ar(sig*env), spread: spread, center: pan, level: amp));
 			}).add;
 
 		});
@@ -337,20 +337,20 @@ Pdef(\layere, {
 		Pbind( // synths
 			\out, bus,
 			\effectBus, effectbus,
-			\dur, 18,//13,//12.7,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
+			\dur, 36,//Pseq([1,2,3,1,2,1,3,5], inf),//13,//12.7,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
 			\amp, Pseq([0.9,0.5,0.3,0.8], inf)* 0.7,
-			\rate, Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,3,4,6,9,10, 12,14,16,20], inf),
+			\rate, 0.35,//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
 			\startPos, Pseq([0.3, 0.5, 0.7, 0.5, 0.29, 0.99, 0.01], inf),
-			\attack, 4.02,//2.9,
-			\sustain, 10.001,
-			\release, 4.02,//6.5,
+			\attack, 0.1,//4.02,
+			\sustain, 15.1,//15.001,
+			\release, 0.1,//4.02,
 			\pan, Pxrand([-1.0, -0.5, 0.0, 0.5, 1.0], inf),
 			\spread, 0.6,
 			\direction, Pxrand([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
 			\send, Pfunc({|envir|
 				dir = envir.direction;
 			}),
-			\file, 1,//Pseq([44,43,42,41], inf),//Pxrand((1..32), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
+			\file, Pxrand((1..52), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
 			\bufnum,Pfunc({|envir|
 				~key = ('data'++(envir.file-1));
 				topEnvironment[~key.asSymbol].path.postln;
@@ -393,7 +393,7 @@ Pdef(\layere, {
 		),
 		Pbind( // efx
 			\out, bus,
-			\dur, 18, //13,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
+			\dur, 36, //13,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
 			\amp, 0.9,
 			\attack, 0.01,//2.5,
 			\sustain, 0.02,//2.0,
