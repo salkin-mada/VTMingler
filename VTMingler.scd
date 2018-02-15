@@ -28,7 +28,7 @@ s.doWhenBooted{/*var ~basepath;
 		//var maxAmountFileLoad = 10;
 		// dont mistake this from saying anything about how much memory scsynth eats
 
-		~basepath = PathName.new("C:/Users/na/Desktop/lydfiler");// <-------choose folder
+		~basepath = PathName.new("D:/live projects/lyd bibliotek/DRUM Samples/Yamaha RM 50/Bassdrums");// <-------choose folder
 
 		0.1.wait; //start hang time
 
@@ -52,6 +52,9 @@ s.doWhenBooted{/*var ~basepath;
 			("loaded so far: "++totalFileSizeLoaded++"MB").postln;
 
 			if ( (~basepath.files.at(i).extension == "wav")
+				/*implement && ~basepath.files.ar(i)."firstCharacter" != .
+				to prevent files like D:\live projects\lyd bibliotek\DRUM Samples\X Drum LM8953\._Hat Open.wav
+				from being loaded*/
 				|| (~basepath.files.at(i).extension == "WAV")
 				|| (~basepath.files.at(i).extension == "aiff"), {
 					// update
@@ -124,7 +127,7 @@ s.doWhenBooted{/*var ~basepath;
 
 			~mono = SynthDef(\mono, {
 				|
-				bufnum, direction = 1, out = 0, effectBus, rate = 1, spread = 1, pan = 0, amp = 0.5,
+				bufnum, direction = 1, out = 0, effectBus, loop = 0, rate = 1, spread = 1, pan = 0, amp = 0.5,
 				attack = 0.2, sustain = 0.5, release = 1.0, startPos = 0,
 				gate = 1
 				|
@@ -136,7 +139,7 @@ s.doWhenBooted{/*var ~basepath;
 					bufnum,
 					rate*BufRateScale.kr(bufnum),
 					1,
-					startPos*frames, loop: 1
+					startPos*frames, loop: loop
 				);
 				env = EnvGen.ar(Env([0,1,1,0], [attack,sustain,release], 'lin'), doneAction: 2);
 				//env = EnvGen.ar(Env.adsr(attack, decay, sustain, release), doneAction: 2);
@@ -148,7 +151,7 @@ s.doWhenBooted{/*var ~basepath;
 
 			~stereo = SynthDef(\stereo, {
 				|
-				bufnum, direction = 1, out = 0, effectBus, rate = 1, spread = 1, pan = 0, amp = 0.5,
+				bufnum, direction = 1, out = 0, effectBus, loop = 0, rate = 1, spread = 1, pan = 0, amp = 0.5,
 				attack = 0.2, sustain = 0.5, release = 1.0, startPos = 0,
 				gate = 1
 				|
@@ -160,7 +163,7 @@ s.doWhenBooted{/*var ~basepath;
 					bufnum,
 					rate*BufRateScale.kr(bufnum),
 					1,
-					startPos*frames, loop: 1
+					startPos*frames, loop: loop
 				);
 				env = EnvGen.ar(Env([0,1,1,0], [attack,sustain,release], 'lin'), doneAction: 2);
 				//env = EnvGen.ar(Env.adsr(attack, decay, sustain, release), doneAction: 2);
@@ -323,34 +326,35 @@ Pdef(\layere).stop;
 Pdef(\layere, {
 	var bus, effectbus, dir = 1.0;
 
-	bus = 2; // stereo ud til summing
+	bus = 4; // stereo ud til summing
 	effectbus = 20; // stereo
 
 	Ndef(\summing, {var in, sig;
-		in = In.ar([2,3]);
-		sig = Limiter.ar(in, 0.8);
+		in = In.ar([4,5]);
+		sig = Limiter.ar(in, 0.9);
 		sig = sig.clip(-0.99, 0.99);
-		sig;
-	}).play;
+		sig * 0.9;
+	}).playN([2,3]);
 
 	Ppar([
 		Pbind( // synths
 			\out, bus,
 			\effectBus, effectbus,
-			\dur, 36,//Pseq([1,2,3,1,2,1,3,5], inf),//13,//12.7,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
-			\amp, Pseq([0.9,0.5,0.3,0.8], inf)* 0.7,
-			\rate, 0.35,//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
-			\startPos, Pseq([0.3, 0.5, 0.7, 0.5, 0.29, 0.99, 0.01], inf),
-			\attack, 0.1,//4.02,
-			\sustain, 15.1,//15.001,
+			\dur, 1,//Pseq([1,2,3,1,2,1,3,5], inf),//13,//12.7,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
+			\amp, 0.9,//Pseq([0.9,0.5,0.7,0.8,0.3,0.8], inf)* 0.7,
+			\loop, 0,
+			\rate, 3.8,//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
+			\startPos, 0.0,//Pseq([0.3, 0.5, 0.7, 0.5, 0.29, 0.99, 0.01], inf),
+			\attack, 0.001,//4.02,
+			\sustain, 0.1,//15.001,
 			\release, 0.1,//4.02,
-			\pan, Pxrand([-1.0, -0.5, 0.0, 0.5, 1.0], inf),
+			\pan, 0.0,//Pxrand([-0.2, -0.1, 0.0, 0.1, 0.2], inf),
 			\spread, 0.6,
-			\direction, Pxrand([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
+			\direction, 1.0,//Pxrand([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
 			\send, Pfunc({|envir|
 				dir = envir.direction;
 			}),
-			\file, Pxrand((1..52), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
+			\file, Pseq((1..103), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
 			\bufnum,Pfunc({|envir|
 				~key = ('data'++(envir.file-1));
 				topEnvironment[~key.asSymbol].path.postln;
@@ -393,14 +397,14 @@ Pdef(\layere, {
 		),
 		Pbind( // efx
 			\out, bus,
-			\dur, 36, //13,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
-			\amp, 0.9,
+			\dur, 120, //13,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
+			\amp, 0.0,
 			\attack, 0.01,//2.5,
 			\sustain, 0.02,//2.0,
-			\release, 8.1, //7.0,
+			\release, 0.1, //7.0,
 			\pan, Pxrand([-1.0, -0.5, 0.0, 0.5, 1.0], inf),
 			\spread, 0.3,
-			\efx, Pseq([1,1,1,0], inf),
+			\efx, 1,
 			\instrument, Pfunc({|envir|
 				var result;
 				("\n\t\tdir:: (send from generator Pbind):\n\t\t"++dir).postln;
