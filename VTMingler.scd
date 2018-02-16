@@ -56,7 +56,8 @@ s.doWhenBooted{/*var ~basepath;
 				to prevent files like D:\live projects\lyd bibliotek\DRUM Samples\X Drum LM8953\._Hat Open.wav
 				from being loaded*/
 				|| (~basepath.files.at(i).extension == "WAV")
-				|| (~basepath.files.at(i).extension == "aiff"), {
+				|| (~basepath.files.at(i).extension == "aiff")
+                || (~basepath.files.at(i).extension == "aif"), {
 					// update
 					numberOfAudioFilesFound = numberOfAudioFilesFound+1;
 					"\tfound a wav/aiff file".postln;
