@@ -1,12 +1,8 @@
+// requirements
+// Quarks.install("walib");
+// SC3-plugins
 
-// TODO
-// watch out for chars like >´< and >ø< (�) in file names,
-/*the buffer doesnt have a problem but for SoundFileView its trouble*/
-// mulighed for at "parse" midifil (~key, vel, timing[dur]) gennem Pdef->Pbind ??
-// tjek regex solutionss "s[0-9]+.*.aif".pathMatch
-// regarding mem allocated:
-/*læs størrelse i ram numframes der er loaded via Buffer
-hvis Buffer ikke kan sige noget om filens frame størrelse før efter den er loaded brug SoundFile til dette?*/
+
 
 //cadeau til the flying saucer
 (
@@ -28,8 +24,8 @@ s.doWhenBooted{/*var ~basepath;
 		//var maxAmountFileLoad = 10;
 		// dont mistake this from saying anything about how much memory scsynth eats
 
-		~basepath = PathName.new("D:/live projects/lyd bibliotek/DRUM Samples/Yamaha RM 50/Bassdrums");// <-------choose folder
-
+		//~basepath = PathName.new("C:/Users/na/Desktop/lydfiler");// <-------choose folder
+		~basepath = PathName.new("D:/live projects/lyd bibliotek/DRUM Samples/SP1200 - Tambourines");
 		0.1.wait; //start hang time
 
 		// check all files in ~basepath
@@ -181,7 +177,7 @@ s.doWhenBooted{/*var ~basepath;
 				attack = 0.01, sustain = 0.1, release = 0.1, gate = 1
 				|
 				var in, sig, env;
-				in = In.ar([20,21], 2);
+				in = In.ar([20,21]);
 				in = HPF.ar(in, 100);
 				sig = CombC.ar(in*0.25, 0.2, 0.5, 7);
 				env = EnvGen.ar(Env([0,1,1,0], [attack,sustain,release], 'lin'), doneAction: 2);
@@ -195,7 +191,7 @@ s.doWhenBooted{/*var ~basepath;
 				attack = 0.1, sustain = 0.1, release = 0.1, gate = 1
 				|
 				var in, sig, env;
-				in = In.ar([20,21], 2);
+				in = In.ar([20,21]);
 				in = HPF.ar(in, 200);
 				sig = in;//SinOsc.ar(Amplitude.kr(in).linexp(0,1,0.8,500))*in;
 				sig = Convolution2.ar(sig*0.8, SinOsc.ar([5e3,6e3,7e3,8e3,9e3])*sig*0.8, 1, 2048, 0.05);
@@ -341,21 +337,21 @@ Pdef(\layere, {
 		Pbind( // synths
 			\out, bus,
 			\effectBus, effectbus,
-			\dur, 1,//Pseq([1,2,3,1,2,1,3,5], inf),//13,//12.7,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
-			\amp, 0.9,//Pseq([0.9,0.5,0.7,0.8,0.3,0.8], inf)* 0.7,
+			\dur, Pseq([1,1,1,2,2], inf),
+			\amp, 0.7,//Pseq([0.9,0.5,0.7,0.8,0.3,0.8], inf)* 0.7,
 			\loop, 0,
-			\rate, 3.8,//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
+			\rate, 0.9,//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
 			\startPos, 0.0,//Pseq([0.3, 0.5, 0.7, 0.5, 0.29, 0.99, 0.01], inf),
 			\attack, 0.001,//4.02,
 			\sustain, 0.1,//15.001,
-			\release, 0.1,//4.02,
-			\pan, 0.0,//Pxrand([-0.2, -0.1, 0.0, 0.1, 0.2], inf),
+			\release, 0.5,//4.02,
+			\pan, Pxrand([-0.2, -0.1, 0.0, 0.1, 0.2], inf),
 			\spread, 0.6,
-			\direction, 1.0,//Pxrand([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
+			\direction, Pseq([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
 			\send, Pfunc({|envir|
 				dir = envir.direction;
 			}),
-			\file, Pseq((1..103), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
+			\file, 9,//Pseq((1..103), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
 			\bufnum,Pfunc({|envir|
 				~key = ('data'++(envir.file-1));
 				topEnvironment[~key.asSymbol].path.postln;
@@ -398,11 +394,11 @@ Pdef(\layere, {
 		),
 		Pbind( // efx
 			\out, bus,
-			\dur, 120, //13,//Pslide([0.2,12], inf, 1, 0.01),//Pseq([1], inf),
-			\amp, 0.0,
-			\attack, 0.01,//2.5,
-			\sustain, 0.02,//2.0,
-			\release, 0.1, //7.0,
+			\dur, Pseq([1,1,1,2,2], inf),
+			\amp, 0.8,
+			\attack, 0.002,//2.5,
+			\sustain, 0.0002,//2.0,
+			\release, 0.4, //7.0,
 			\pan, Pxrand([-1.0, -0.5, 0.0, 0.5, 1.0], inf),
 			\spread, 0.3,
 			\efx, 1,
@@ -425,6 +421,19 @@ Pdef(\layere, {
 	])/*.trace*/;
 }).play(TempoClock(132/60*4));
 )
+
+
+
+
+// TODO
+// watch out for chars like >´< and >ø< (�) in file names,
+/*the buffer doesnt have a problem but for SoundFileView its trouble*/
+// mulighed for at "parse" midifil (~key, vel, timing[dur]) gennem Pdef->Pbind ??
+// tjek regex solutionss "s[0-9]+.*.aif".pathMatch
+// regarding mem allocated:
+/*læs størrelse i ram numframes der er loaded via Buffer
+hvis Buffer ikke kan sige noget om filens frame størrelse før efter den er loaded brug SoundFile til dette?*/
+
 
 // dictionary monstro questionmark
 
