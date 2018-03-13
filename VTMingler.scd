@@ -1,7 +1,7 @@
 // requirements
-// Quarks.install("walib");
+// Quarks.install("wslib");
 // SC3-plugins
-
+// go to -> Quarks.gui
 
 
 //cadeau til the flying saucer
@@ -25,7 +25,7 @@ s.doWhenBooted{/*var ~basepath;
 		// dont mistake this from saying anything about how much memory scsynth eats
 
 		//~basepath = PathName.new("C:/Users/na/Desktop/lydfiler");// <-------choose folder
-		~basepath = PathName.new("D:/live projects/lyd bibliotek/DRUM Samples/SP1200 - Tambourines");
+		~basepath = PathName.new("/Volumes/Untitled/VT SOUND/hollywood acid fx Project/Samples/Recorded/");
 		0.1.wait; //start hang time
 
 		// check all files in ~basepath
@@ -331,7 +331,7 @@ Pdef(\layere, {
 		sig = Limiter.ar(in, 0.9);
 		sig = sig.clip(-0.99, 0.99);
 		sig * 0.9;
-	}).playN([2,3]);
+	}).playN([0,1]);
 
 	Ppar([
 		Pbind( // synths
@@ -340,7 +340,7 @@ Pdef(\layere, {
 			\dur, Pseq([1,1,1,2,2], inf),
 			\amp, 0.7,//Pseq([0.9,0.5,0.7,0.8,0.3,0.8], inf)* 0.7,
 			\loop, 0,
-			\rate, 0.9,//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
+			\rate, 0.2,//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
 			\startPos, 0.0,//Pseq([0.3, 0.5, 0.7, 0.5, 0.29, 0.99, 0.01], inf),
 			\attack, 0.001,//4.02,
 			\sustain, 0.1,//15.001,
@@ -351,7 +351,7 @@ Pdef(\layere, {
 			\send, Pfunc({|envir|
 				dir = envir.direction;
 			}),
-			\file, 9,//Pseq((1..103), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
+			\file, Pseq((1..3), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
 			\bufnum,Pfunc({|envir|
 				~key = ('data'++(envir.file-1));
 				topEnvironment[~key.asSymbol].path.postln;
