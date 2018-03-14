@@ -25,7 +25,8 @@ s.doWhenBooted{/*var ~basepath;
 		// dont mistake this from saying anything about how much memory scsynth eats
 
 		//~basepath = PathName.new("C:/Users/na/Desktop/lydfiler");// <-------choose folder
-		~basepath = PathName.new("D:/live projects/lyd bibliotek/DRUM Samples/SP1200 - Tambourines");
+		~basepath = PathName.new("D:/live projects/lyd bibliotek/tempales");
+
 		0.1.wait; //start hang time
 
 		// check all files in ~basepath
@@ -337,21 +338,21 @@ Pdef(\layere, {
 		Pbind( // synths
 			\out, bus,
 			\effectBus, effectbus,
-			\dur, Pseq([1,1,1,2,2], inf),
-			\amp, 0.7,//Pseq([0.9,0.5,0.7,0.8,0.3,0.8], inf)* 0.7,
+			\dur, Pseq([Pseq([1], 22), Pseq([2], 2)], inf),//Pseq([1,1,1,1,1,1,1,Rest(7),1,Rest(8),1,1,2,Rest(3)], inf),//Pseq([1,1,1,2,Rest(1)], inf),
+			\amp, 0.9,//Pseq([0.9,0.5,0.7,0.8,0.3,0.8], inf)* 0.7,
 			\loop, 0,
-			\rate, 0.9,//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
+			\rate, 3.0,//Pseq([2,2,2,2,2,1], inf),//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
 			\startPos, 0.0,//Pseq([0.3, 0.5, 0.7, 0.5, 0.29, 0.99, 0.01], inf),
-			\attack, 0.001,//4.02,
+			\attack, 0.0001,//4.02,
 			\sustain, 0.1,//15.001,
-			\release, 0.5,//4.02,
-			\pan, Pxrand([-0.2, -0.1, 0.0, 0.1, 0.2], inf),
+			\release, 1.6,//4.02,
+			\pan, Pxrand([-0.5, -0.25, 0.0, 0.25, 0.5], inf),
 			\spread, 0.6,
-			\direction, Pseq([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
+			\direction, 1.0,//Pseq([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
 			\send, Pfunc({|envir|
 				dir = envir.direction;
 			}),
-			\file, 9,//Pseq((1..103), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
+			\file, Pseq((1..24), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
 			\bufnum,Pfunc({|envir|
 				~key = ('data'++(envir.file-1));
 				topEnvironment[~key.asSymbol].path.postln;
@@ -398,7 +399,7 @@ Pdef(\layere, {
 			\amp, 0.8,
 			\attack, 0.002,//2.5,
 			\sustain, 0.0002,//2.0,
-			\release, 0.4, //7.0,
+			\release, 0.2, //7.0,
 			\pan, Pxrand([-1.0, -0.5, 0.0, 0.5, 1.0], inf),
 			\spread, 0.3,
 			\efx, 1,
@@ -419,7 +420,7 @@ Pdef(\layere, {
 			}),
 		)
 	])/*.trace*/;
-}).play(TempoClock(132/60*4));
+}).play(TempoClock(148.57/60*4));
 )
 
 
