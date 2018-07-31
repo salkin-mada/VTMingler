@@ -501,3 +501,11 @@ o.free;
 b.free;
 x.free;
 y.free; */
+
+
+//tjek ud
+/*Pbind(\dur, 0.17, \degree, Pwhite(-4, 6) +.x Pseq([[-4,-2,0,2], 1, [0, 2], 3])).trace.play
+Pbind(\dur, 0.17, \degree, Pwhite(-4, 6) +.x Pseq([[-4,-2,0,2,4,6], 10, [0,2], 3])).trace.play
+Pbind(\dur, 0.17, \degree, Pwhite(-4, 6) +.x Pseq([[-4,-2,0,2,4,6], 6, [0,3,9], 9])).trace.play
+Pbind(\dur, 0.005, \degree, Pwhite(0, 3) +.x Pseq([[-4,-2,0,2,4,6], 6, [0,3,9], 9])).trace.play*/
+// adverb .x on streams !!
