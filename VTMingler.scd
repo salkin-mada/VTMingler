@@ -7,8 +7,8 @@
 //cadeau til the flying saucer
 (
 ~numberOfAudioFilesLoaded = 0; ~key; ~basepath; ~makeView; ~viewOn = 0;
-//"C:/Users/na/Desktop/Supercollider SCD/folder new turn/LYDSERVER.scd".load;
-"X:/Supercollider SCD/folder new turn/LYDSERVER.scd".load;
+//"C:/Users/na/Desktop/Supercollider SCD/folder new turn/LYDSERVER.scd".load; // for laptop
+"X:/Supercollider SCD/folder new turn/LYDSERVER.scd".load;                    // for stationary
 s.doWhenBooted{/*var ~basepath;
 	~basepath = FileDialog.new({arg ok, path;
 	if (ok, {
@@ -21,12 +21,12 @@ s.doWhenBooted{/*var ~basepath;
 		numberOfAudioFilesFound = 0, numberOfSkippedAudioFiles = 0;
 		var fileSize, totalFileSize = 0, totalFileSizeLoaded = 0;
 
-		var maxLoad = 8000/*MB*/*1e6; /*4000 max tested on laptop, 8000 tested on desktop*/
+		var maxLoad = 800/*MB*/*1e6; /*4000 max tested on laptop, 8000 tested on desktop*/
 		//var maxAmountFileLoad = 10;
 		// dont mistake this from saying anything about how much memory scsynth eats
 
 		//~basepath = PathName.new("C:/Users/na/Desktop/lydfiler");// <-------choose folder
-		~basepath = PathName.new("X:/lydfiler/mona sigler generate spasm");
+		~basepath = PathName.new("X:/lydfiler/clarinet");
 		0.1.wait; //start hang time
 
 		// check all files in ~basepath
@@ -201,6 +201,19 @@ s.doWhenBooted{/*var ~basepath;
 				Out.ar(out, Splay.ar(LeakDC.ar(sig*env), spread: spread, center: pan, level: amp));
 			}).add;
 
+			SynthDef(\shift, {
+				|
+				out = 0,
+				spread = 1, pan = 0, amp = 0.5,
+				attack = 0.1, sustain = 0.1, release = 0.1, gate = 1
+				|
+				var in, sig, env;
+				in = In.ar([20,21]);
+				sig = PitchShift.ar(in, 0.5,2.5);
+				env = EnvGen.ar(Env([0,1,1,0], [attack,sustain,release], 'lin'), doneAction: 2);
+				Out.ar(out, Splay.ar(LeakDC.ar(sig*env), spread: spread, center: pan, level: amp));
+			}).add;
+
 		});
 
 		humansAreSlow.wait;
@@ -338,21 +351,21 @@ Pdef(\layere, {
 		Pbind( // synths
 			\out, bus,
 			\effectBus, effectbus,
-			\dur, 0.3,
+			\dur, 1,
 			\amp, 0.8,//Pseq([0.9,0.5,0.7,0.8,0.3,0.8], inf)* 0.7,
 			\loop, 0,
-			\rate, Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
-			\startPos, Pbrown(0,1,0.1,inf),
-			\attack, 0.06,//4.02,
-			\sustain, 0.1,//15.001,
-			\release, 0.02,//4.02,
+			\rate, 1.0,//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
+			\startPos, 0.01,//Pbrown(0,1,0.1,inf),
+			\attack, 0.001,//4.02,
+			\sustain, 7.91,//15.001,
+			\release, 0.1,//4.02,
 			\pan, Pxrand([-0.5, -0.25, 0.0, 0.25, 0.5], inf),
 			\spread, 0.6,
-			\direction, 1.0,//Pseq([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
+			\direction, 0.7,//Pseq([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
 			\send, Pfunc({|envir|
 				dir = envir.direction;
 			}),
-			\file, Prand((1..2), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
+			\file, Prand((1..43), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
 			\bufnum,Pfunc({|envir|
 				~key = ('data'++(envir.file-1));
 				topEnvironment[~key.asSymbol].path.postln;
@@ -395,11 +408,11 @@ Pdef(\layere, {
 		// look into Pfx and Pfxb
 		Pbind( // efx
 			\out, bus,
-			\dur, 10,//Pseq([1,1,1,2,2], inf),
-			\amp, 0.8,
-			\attack, 0.002,//2.5,
+			\dur, 1,//Pseq([1,1,1,2,2], inf),
+			\amp, 0.6,
+			\attack, 0.2,//2.5,
 			\sustain, 0.0002,//2.0,
-			\release, 10.2, //7.0,
+			\release, 4.2, //7.0,
 			\pan, Pxrand([-1.0, -0.5, 0.0, 0.5, 1.0], inf),
 			\spread, 0.3,
 			\efx, 1,
@@ -412,6 +425,7 @@ Pdef(\layere, {
 					switch(envir.efx,
 						0, {"\t\tdelay".postln; result = 'delay'},
 						1, {"\t\tmingl".postln; result = 'mingl'},
+						2, {"\t\tshift".postln; result = 'shift'},
 						{ result = 'nil'}
 					);
 					"\n".post;
@@ -420,7 +434,7 @@ Pdef(\layere, {
 			}),
 		)
 	])/*.trace*/;
-}).play(TempoClock(148.57/60*4));
+}).play(TempoClock(128.57/60*4));
 )
 
 
