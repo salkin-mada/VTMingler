@@ -17,7 +17,7 @@ s.doWhenBooted{/*var ~basepath;
 	}, fileMode: 2);*/
 
 	fork{
-		var humansAreSlow = 0.00015,
+		var humansAreSlow = 0.00005,
 		numberOfAudioFilesFound = 0, numberOfSkippedAudioFiles = 0;
 		var fileSize, totalFileSize = 0, totalFileSizeLoaded = 0;
 
@@ -26,7 +26,9 @@ s.doWhenBooted{/*var ~basepath;
 		// dont mistake this from saying anything about how much memory scsynth eats
 
 		//~basepath = PathName.new("C:/Users/na/Desktop/lydfiler");// <-------choose folder
-		~basepath = PathName.new("X:/lydfiler/clarinet");
+		//~basepath = PathName.new("X:/lydfiler/clarinet");
+		~basepath = PathName.new("X:/SALKIN_T5 SSD CONTENT/live projects/lyd bibliotek/DRUM Samples/MIX");
+
 		0.1.wait; //start hang time
 
 		// check all files in ~basepath
@@ -126,7 +128,7 @@ s.doWhenBooted{/*var ~basepath;
 			~mono = SynthDef(\mono, {
 				|
 				bufnum, direction = 1, out = 0, effectBus, loop = 0, rate = 1, spread = 1, pan = 0, amp = 0.5,
-				attack = 0.2, sustain = 0.5, release = 1.0, startPos = 0,
+				attack = 0.01, decay = 0.5, sustain = 0.5, release = 1.0, startPos = 0,
 				gate = 1
 				|
 				var numChan, sig, key, frames, env, file;
@@ -139,8 +141,8 @@ s.doWhenBooted{/*var ~basepath;
 					1,
 					startPos*frames, loop: loop
 				);
-				env = EnvGen.ar(Env([0,1,1,0], [attack,sustain,release], 'lin'), doneAction: 2);
-				//env = EnvGen.ar(Env.adsr(attack, decay, sustain, release), doneAction: 2);
+				//env = EnvGen.ar(Env([0,1,1,0], [attack,sustain,release], 'lin'), doneAction: 2);
+				env = EnvGen.kr(Env.adsr(attack, decay, sustain, release), gate, doneAction: 2);
 				//FreeSelfWhenDone.kr(env);
 				sig = Splay.ar(sig, spread: spread, center: pan, level: amp);
 				Out.ar(out, (sig*env)*direction);
@@ -150,7 +152,7 @@ s.doWhenBooted{/*var ~basepath;
 			~stereo = SynthDef(\stereo, {
 				|
 				bufnum, direction = 1, out = 0, effectBus, loop = 0, rate = 1, spread = 1, pan = 0, amp = 0.5,
-				attack = 0.2, sustain = 0.5, release = 1.0, startPos = 0,
+				attack = 0.01, decay = 0.5, sustain = 0.5, release = 1.0, startPos = 0,
 				gate = 1
 				|
 				var numChan, sig, key, frames, env, file;
@@ -163,8 +165,8 @@ s.doWhenBooted{/*var ~basepath;
 					1,
 					startPos*frames, loop: loop
 				);
-				env = EnvGen.ar(Env([0,1,1,0], [attack,sustain,release], 'lin'), doneAction: 2);
-				//env = EnvGen.ar(Env.adsr(attack, decay, sustain, release), doneAction: 2);
+				//env = EnvGen.ar(Env([0,1,1,0], [attack,sustain,release], 'lin'), doneAction: 2);
+				env = EnvGen.ar(Env.adsr(attack, decay, sustain, release), gate, doneAction: 2);
 				//FreeSelfWhenDone.kr(env);
 				sig = Splay.ar(sig, spread: spread, center: pan, level: amp);
 				Out.ar(out, (sig*env)*direction);
@@ -178,7 +180,7 @@ s.doWhenBooted{/*var ~basepath;
 				attack = 0.01, sustain = 0.1, release = 0.1, gate = 1
 				|
 				var in, sig, env;
-				in = In.ar([20,21]);
+				in = In.ar([20,21]); //InBus.ar(~fxBus,2);
 				in = HPF.ar(in, 100);
 				sig = CombC.ar(in*0.25, 0.2, 0.5, 7);
 				env = EnvGen.ar(Env([0,1,1,0], [attack,sustain,release], 'lin'), doneAction: 2);
@@ -192,7 +194,7 @@ s.doWhenBooted{/*var ~basepath;
 				attack = 0.1, sustain = 0.1, release = 0.1, gate = 1
 				|
 				var in, sig, env;
-				in = In.ar([20,21]);
+				in = In.ar([20,21]); //InBus.ar(~fxBus,2)
 				in = HPF.ar(in, 200);
 				sig = in;//SinOsc.ar(Amplitude.kr(in).linexp(0,1,0.8,500))*in;
 				sig = Convolution2.ar(sig*0.8, SinOsc.ar([5e3,6e3,7e3,8e3,9e3])*sig*0.8, 1, 2048, 0.05);
@@ -208,7 +210,7 @@ s.doWhenBooted{/*var ~basepath;
 				attack = 0.1, sustain = 0.1, release = 0.1, gate = 1
 				|
 				var in, sig, env;
-				in = In.ar([20,21]);
+				in = In.ar([20,21]); //InBus.ar(~fxBus,2)
 				sig = PitchShift.ar(in, 0.5,2.5);
 				env = EnvGen.ar(Env([0,1,1,0], [attack,sustain,release], 'lin'), doneAction: 2);
 				Out.ar(out, Splay.ar(LeakDC.ar(sig*env), spread: spread, center: pan, level: amp));
@@ -328,6 +330,9 @@ s.doWhenBooted{/*var ~basepath;
 ~makeView.reset;
 ~makeView.play(AppClock);
 
+~bus=Bus.audio(s,2);
+
+~fxBus=Bus.audio(s,2);
 
 Pdef(\layere).fadeTime = 10.0;
 Pdef(\layere).stop;
@@ -354,18 +359,20 @@ Pdef(\layere, {
 			\dur, 1,
 			\amp, 0.8,//Pseq([0.9,0.5,0.7,0.8,0.3,0.8], inf)* 0.7,
 			\loop, 0,
-			\rate, 1.0,//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
-			\startPos, 0.01,//Pbrown(0,1,0.1,inf),
-			\attack, 0.001,//4.02,
-			\sustain, 7.91,//15.001,
-			\release, 0.1,//4.02,
-			\pan, Pxrand([-0.5, -0.25, 0.0, 0.25, 0.5], inf),
+			\rate, 0.9,//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
+			\startPos, 0.0,//Pbrown(0,1,0.1,inf),
+			\attack, 0.001,
+			\decay, 1,
+			\sustain, 3.1,
+			\release, 0.9,
+			\pan, Pxrand([-0.25, -0.15, 0.0, 0.15, 0.25], inf),
 			\spread, 0.6,
-			\direction, 0.7,//Pseq([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
+			\direction, 0.5,//Pseq([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
 			\send, Pfunc({|envir|
 				dir = envir.direction;
 			}),
-			\file, Prand((1..43), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
+			\file, Pseq([1,2,3,4,5,6,7,234,234,234,234,234,234,234,234,Prand((1..313)),1,43,25,Prand((1..313)),Prand((1..313)),Prand((1..313))], inf),
+			// eksempel på file behaviourur --_>  youyou.wav weird channel behavior CHECK IT OUT
 			\bufnum,Pfunc({|envir|
 				~key = ('data'++(envir.file-1));
 				topEnvironment[~key.asSymbol].path.postln;
@@ -408,14 +415,14 @@ Pdef(\layere, {
 		// look into Pfx and Pfxb
 		Pbind( // efx
 			\out, bus,
-			\dur, 1,//Pseq([1,1,1,2,2], inf),
+			\dur, 12,//Pseq([1,1,1,2,2], inf),
 			\amp, 0.6,
 			\attack, 0.2,//2.5,
 			\sustain, 0.0002,//2.0,
 			\release, 4.2, //7.0,
 			\pan, Pxrand([-1.0, -0.5, 0.0, 0.5, 1.0], inf),
 			\spread, 0.3,
-			\efx, 1,
+			\efx, 2,
 			\instrument, Pfunc({|envir|
 				var result;
 				("\n\t\tdir:: (send from generator Pbind):\n\t\t"++dir).postln;
