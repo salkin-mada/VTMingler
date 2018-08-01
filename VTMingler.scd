@@ -347,7 +347,8 @@ Pdef(\layere, {
 
 	Ndef(\summing, {var in, sig;
 		in = In.ar([4,5]);
-		sig = Limiter.ar(in, 0.9);
+		sig = CompanderD.ar(in,0.2,0.3,1,0.01,0.1);
+		sig = Limiter.ar(sig, 0.9);
 		sig = sig.clip(-0.99, 0.99);
 		sig * 0.9;
 	}).playN([0,1]);
@@ -356,10 +357,11 @@ Pdef(\layere, {
 		Pbind( // synths
 			\out, bus,
 			\effectBus, effectbus,
-			\dur, 1,
+			\dur, Pseq([1,3,2],inf),
+			//Pseq([1,Rest(1/3),1,2,Rest(0.5),1,Rest(1/3),1,2,Rest(1/3),1,Rest(1/3),1,Rest(1/3),1],inf),
 			\amp, 0.8,//Pseq([0.9,0.5,0.7,0.8,0.3,0.8], inf)* 0.7,
 			\loop, 0,
-			\rate, 0.9,//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
+			\rate, 0.7,//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
 			\startPos, 0.0,//Pbrown(0,1,0.1,inf),
 			\attack, 0.001,
 			\decay, 1,
@@ -367,7 +369,7 @@ Pdef(\layere, {
 			\release, 0.9,
 			\pan, Pxrand([-0.25, -0.15, 0.0, 0.15, 0.25], inf),
 			\spread, 0.6,
-			\direction, 0.5,//Pseq([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
+			\direction, 0.95,//Pseq([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
 			\send, Pfunc({|envir|
 				dir = envir.direction;
 			}),
@@ -441,7 +443,7 @@ Pdef(\layere, {
 			}),
 		)
 	])/*.trace*/;
-}).play(TempoClock(128.57/60*4));
+}).count(n:32).play(TempoClock(128.57/60*4));
 )
 
 
@@ -516,3 +518,558 @@ Pbind(\dur, 0.17, \degree, Pwhite(-4, 6) +.x Pseq([[-4,-2,0,2,4,6], 10, [0,2], 3
 Pbind(\dur, 0.17, \degree, Pwhite(-4, 6) +.x Pseq([[-4,-2,0,2,4,6], 6, [0,3,9], 9])).trace.play
 Pbind(\dur, 0.005, \degree, Pwhite(0, 3) +.x Pseq([[-4,-2,0,2,4,6], 6, [0,3,9], 9])).trace.play*/
 // adverb .x on streams !!
+
+
+
+
+~fed = Buffer.alloc(s, Server.default.sampleRate * 0.6, 1);
+(
+{
+    var in, pos, snd;
+    in = Impulse.ar(0);
+    snd = LocalIn.ar(1) * 0.995; // <- fb coefficient
+    pos = DelTapWr.ar(~fed, snd);
+    snd = in + (DelTapRd.ar(~fed, pos, { rrand(0.05, 0.2) + (LFNoise2.kr(rrand(0.5, 1.5)) * 0.005) } ! 14).sum * 0.3);
+    snd = (snd + 0.1).tanh;
+    snd = LeakDC.ar(snd);
+    LocalOut.ar(snd);
+    snd = Splay.ar(DelTapRd.ar(~fed, pos, { rrand(0.05, 0.2) } ! 20));
+    //snd = snd + NHHall.ar(snd, 5);
+	snd = snd + JPverb.ar(snd, 10);
+    snd = snd * -15.dbamp;
+}.play;
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//////////// tjek dette for extern kåntrål
+
+s.boot;
+
+/*============================================
+LOAD SOME PIANO SOUNDS HERE
+===============================================*/
+
+(
+~chords = Array.new;
+~folder = PathName.new("X:/lydfiler/clarinet"); // Load your path name here
+~folder.entries.do({
+	arg path;
+	~chords = ~chords.add(Buffer.read(s,path.fullPath));
+});
+)
+
+~chords[rand(7)].play; // test here
+
+
+(
+SynthDef(\pnoRhyth, {
+	arg out=0, relTime=1, bufnum=0, rate=1, amp=1;
+	var env, pno;
+	env = EnvGen.ar(Env.perc(0.01, relTime),doneAction:2);
+	pno = BufRd.ar(1, bufnum,Phasor.ar(0,BufRateScale.kr(bufnum)*rate,0,BufFrames.kr(bufnum)));
+	pno = pno*env;
+	pno = pno*amp;
+	Out.ar(out, pno);
+}).add;
+)
+
+Synth(\pnoRhyth, [\bufnum, ~chords[rand(7)], \relTime, 6.5, \out, 0, \amp, 1.5]); // Test again
+
+/*=====================================================
+PIANO PLAYERS - there are pno_1 & pno_2
+======================================================*/
+t = TempoClock.new(100/60).permanent_(true);
+
+(
+Pdefn(\rate, Pseq([0,3],inf).midiratio);
+Pdefn(\amp, 1.5);
+Pbindef(\pno_1,
+	\instrument, \pnoRhyth,
+	\dur, Pseq([Pseq([0.5],2), Pseq([0.25],2), Pseq([Rest(0.5)],2)],inf),
+	\rate, Pdefn(\rate),
+	\bufnum, ~chords[0], // Pindex(~chords,Pseq((0..7),inf), inf),
+	\relTime, 4.3,
+	\out, 0,
+	\amp, Pdefn(\amp),
+);
+// Player N° 2 //
+(
+Pdefn(\rate, Pseq([0,3],inf).midiratio);
+Pdefn(\amp, 1.5);
+Pbindef(\pno_2,
+	\instrument, \pnoRhyth,
+	\dur, Pseq([
+		Pseq([0.5],2),
+		Pseq([0.25],4),
+		Pseq([Rest(0.5)],2)
+	],inf),
+	\rate, Pdefn(\rate),
+	\bufnum, ~chords[3], // Pindex(~chords,Pseq((0..7),inf), inf),
+	\relTime, 7.2,
+	\out, 0,
+	\amp, Pdefn(\amp),
+);
+)
+)
+
+/*=====================================================
+CONTROLS for PLAYERS
+=======================================================*/
+
+Pbindef(\pno_1).play(t,quant:4);
+Pbindef(\pno_2).play(t,quant:4);
+
+Pbindef(\pno_1).resume(t,quant:1);
+Pbindef(\pno_2).resume(t,quant:1);
+
+Pbindef(\pno_1).pause;
+Pbindef(\pno_2).pause;
+
+
+Pbindef(\pno_1).resume;
+Pbindef(\pno_2).resume;
+
+Pbindef(\pno_1).stop;Pbindef(\pno_2).stop;
+
+Pbindef(\pno_1).clear;Pbindef(\pno_2).clear;
+
+/*======================================================
+AMP BOOST ---------- if needed
+=======================================================*/
+
+Pdefn(\amp, 1.8);
+
+/*======================================================
+BUTTON FOR CHANGING RATES
+
+=======================================================*/
+
+
+(
+Window.closeAll;
+w=Window("rate changer",Rect(900,200,300,150))
+.front
+.alwaysOnTop_(true);
+
+w.view.decorator_(FlowLayout(w.bounds, 20@10,50@10));
+
+~tex_1 = StaticText(w.view, 80@20)
+.string_("Button_1")
+.align_(\center)
+.font_(Font("Monaco", 10))
+.background_(Color.white);
+
+~tex_2 = StaticText(w.view, 80@20)
+.string_("Button_2")
+.align_(\center)
+.font_(Font("Monaco", 10))
+.background_(Color.white);
+
+w.view.decorator.nextLine;
+
+~button_1 = Button(w.view, 80@80)
+.states_([
+	["Ebm_1", Color.black, Color.red],
+])
+.action_({ |button|
+	switch (button.value,
+		0, { Pdefn(\rate, Pseq([0,3],inf).midiratio) },
+	)
+});
+
+~button_2 = Button(w.view, 80@80)
+.states_([
+    ["Eb_2", Color.black, Color.green],
+	["F7_3", Color.white, Color.blue]
+])
+.action_({ |button|
+	switch (button.value,
+		0, { Pdefn(\rate, Pseq([Pseq([0],3),Pseq([2],1)],inf).midiratio) },
+		1, { Pdefn(\rate, Pseq([Pseq([0],4),Pseq([Prand([2,4],inf)],2)],inf).midiratio) }
+	)
+});
+);
+
+
+/*=============================================================
+Pdefn info
+================================================================*/
+Pdefn(\rate, Pseq([0,3],inf).midiratio);
+Pdefn(\rate, Pseq([Pseq([0],3),Pseq([2],1)],inf).midiratio);
+Pdefn(\rate, Pseq([0,3],inf).midiratio);
+Pdefn(\rate, Pseq([Pseq([0],4),Pseq([Prand([2,4],inf)],2)],inf).midiratio);
+/*=================================================================*/
+
+t.tempo_(40/60); // Tempo change if needed
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//// swings
+
+
+(
+~swingify = Prout({ |ev|
+    var now, nextTime = 0, thisShouldSwing, nextShouldSwing = false, adjust;
+    while { ev.notNil } {
+        // current time is what was "next" last time
+        now = nextTime;
+        nextTime = now + ev.delta;
+        thisShouldSwing = nextShouldSwing;
+        nextShouldSwing = ((nextTime absdif: nextTime.round(ev[\swingBase])) <= (ev[\swingThreshold] ? 0)) and: {
+            (nextTime / ev[\swingBase]).round.asInteger.odd
+        };
+        adjust = ev[\swingBase] * ev[\swingAmount];
+        // an odd number here means we're on an off-beat
+        if(thisShouldSwing) {
+            ev[\timingOffset] = (ev[\timingOffset] ? 0) + adjust;
+            // if next note will not swing, this note needs to be shortened
+            if(nextShouldSwing.not) {
+                ev[\sustain] = ev.use { ~sustain.value } - adjust;
+            };
+        } {
+            // if next note will swing, this note needs to be lengthened
+            if(nextShouldSwing) {
+                ev[\sustain] = ev.use { ~sustain.value } + adjust;
+            };
+        };
+        ev = ev.yield;
+    };
+});
+)
+
+
+Pchain(~swingify, p, (swingBase: 0.25, swingAmount: 0.0)).play(TempoClock(148.57/60*4))
+
+// note duration = twice swingBase, no swing (correct)
+Pchain(~swingify, Pstretch(2, p), (swingBase: 0.25, swingAmount: 1/3)).play;
+
+// hear the result of different swing amounts
+(
+Ppar([
+    // 60% of a 16th-note
+    Pchain(~swingify, p, (swingBase: 0.25, swingAmount: 0.6, pan: -1)),
+    // 20% of a 16th-note
+    Pchain(~swingify, p, (swingBase: 0.25, swingAmount: 0.2, pan: 1, octave: 4))
+]).play;
+)
+
+
+(
+q = Ppar([
+    // walking bass (by an idiot bass player who only chooses notes randomly)
+    Pbind(
+        \octave, 3,
+        \degree, Pwhite(0, 7, inf),
+        \dur, 0.5
+    ),
+    Pseq([
+        Pchain(
+            ~swingify,
+            Pbind(
+                \degree, Pseries(-7, 1, 15) +.x Pseq([0, 9], 1),
+                \dur, Pwhite(1, 3, inf) * 0.25
+            ),
+            (swingBase: 0.25, swingAmount: 0.2)
+        ),
+        Pfuncn({ q.stop; Event.silent(1) }, 1)
+    ])
+]).play;
+)
+
+
+
+
+
+
+
+
+
+
+
+
+t = TempoClock.new(128.57/60*4).permanent_(true);
+
+t.tempo_(78.00/60*4); // Tempo change if needed
+
+
+(
+Pdef(\layere, {
+	q = Ppar([
+		Pseq([
+			Pchain(
+				~swingify,
+				Pbind(
+					\degree, Pseries(-7, 1, 15) +.x Pseq([0, 9], 1),
+					\dur, Pwhite(1, 3, inf) * 0.25
+				),
+				(swingBase: 0.25, swingAmount: 0.2)
+			),
+			Pfuncn({ q.stop; Event.silent(1) }, 1)
+		])
+	]);
+
+	Ppar([
+		Pbind(
+			\degree,3,
+			\dur, 3,
+		)
+	])
+
+}).play(t, quant:4);
+)
+
+
+
+
+
+
+
+
+
+
+
+//////////////////////////////////////////
+/////////////////////////////////////////////
+// OTHER  POs  INTERESTING sTUUFS
+
+
+
+
+(
+p = Pspawn(Pbind(
+    \method, \par,        // embed patterns in parallel
+        // generate the subpattern in a Pfunc (so there's a new pattern each time)
+        // Pfunc returns the pattern without rendering the stream
+        // -- important for Pspawn
+        // See the Pspawn helpfile for other ways to embed patterns
+    \pattern, Pfunc {
+        Pbind(
+            \degree, Pseries(rrand(-5, 7), #[-1, 1].choose, rrand(4, 7)),
+            \pan, rrand(-1.0, 1.0),
+            \dur, rrand(0.1, 0.3)    // duration is chosen once for each pattern
+        )
+    },
+        // The \delta key is used automatically for the spawner.wait() call
+    \delta, Pwhite(1, 4, inf) * 0.25
+
+)).trace.play;
+)
+
+
+
+
+
+// Demonstrates how Pfxb isolates signals on different buses
+// The fx synth is a simple volume control here
+// but it could be more complex
+
+(
+SynthDef(\volumeCtl, { |out, amp = 1, gate = 1|
+    var    sig = In.ar(out, 2) * amp;
+    sig = sig * EnvGen.kr(Env(#[1, 1, 0], #[1, 1], -3, releaseNode: 1), gate, doneAction: Done.freeSelf);
+    ReplaceOut.ar(out, sig)
+}).add;
+
+SynthDef(\EFF, { |out, amp = 1, pitch=100, gate = 1|
+    var    sig = In.ar(out, 2) * amp;
+	sig = PitchShift.ar(sig,0.2, pitch);
+    sig = sig * EnvGen.kr(Env(#[1, 1, 0], #[1, 1], -3, releaseNode: 1), gate, doneAction: Done.freeSelf);
+    ReplaceOut.ar(out, sig)
+}).add;
+
+~vbus1 = Bus.control(s, 1).set(0.5);
+~vbus2 = Bus.control(s, 1).set(0.5);
+~vbus3 = Bus.control(s, 1).set(0.5);
+//~vbus4 = Bus.control(s, 1).set(0.5);
+
+~window = Window.new("mixers", Rect(10, 100, 320, 600));
+~window.view.decorator = FlowLayout(~window.view.bounds, 2@2);
+EZSlider(~window, 310@20, "low part", \amp, { |ez| ~vbus1.set(ez.value) }, 0.5);
+~window.view.decorator.nextLine;
+EZSlider(~window, 310@20, "high part", \amp, { |ez| ~vbus2.set(ez.value) }, 0.5);
+~window.view.decorator.nextLine;
+EZSlider(~window, 310@20, "high part eff", \freq, { |ez| ~vbus3.set(ez.value) }, 0.5);
+
+~window.front.onClose_({ ~vbus1.free; ~vbus2.free; ~vbus3.free; });
+)
+
+(
+p = Ppar([
+    Pfxb(Pbind(
+        \degree, Pseq([0, 7, 4, 3, 9, 5, 1, 4], inf),
+        \octave, 4,
+        \dur, 0.5
+    ), \volumeCtl, \amp, ~vbus1.asMap),    // map to control bus here
+    Pfxb(Pbind(
+        \degree, Pwhite(0, 11, inf),
+        \dur, 0.25
+    ), \EFF, \pitch, ~vbus3.asMap, \amp, ~vbus3.asMap)    // ... and here
+]).play;
+)
+
+p.stop;
+
+
+
+(
+SynthDef(\playbuf, { |bufnum, start, dur = 1, amp = 0.2, out|
+    var    sig = PlayBuf.ar(1, bufnum, BufRateScale.ir(bufnum), 0, start);
+    sig = sig * amp * EnvGen.kr(Env.linen(0.01, dur, 0.01), doneAction: Done.freeSelf);
+    Out.ar(out, sig ! 2)
+}).add;
+)
+
+(
+TempoClock.default.tempo = 1;
+p = Pproto({
+    ~buf = (type: \allocRead, path: Platform.resourceDir +/+ "sounds/a11wlk01.wav").yield;
+}, Pbind(
+    \instrument, \playbuf,
+        // access resources in the protoevent by Pkey
+    \bufnum, Pkey(\buf),
+	\rate, 2,
+    \dur, 0.1,//Pwhite(1, 4, inf) * 0.25,
+        // upper bound of Pwhite is based on duration
+        // so that start + (dur * samplerate) never goes past the buffer's end
+    \start, Pwhite(0, 2208893 - (Pkey(\dur) * 44100), inf)
+)).play;
+)
+
+// shows a buffer number allocated ('true' ContiguousBlock)
+s.bufferAllocator.debug;
+
+p.stop;
+
+s.bufferAllocator.debug;    // after stop, the buffer is gone
+
+
+
+
+
+
+
+
+
+
+
+////FURTHER INTERESTING
+////FURTHER INTERESTING
+////FURTHER INTERESTING
+(
+TempoClock.default.tempo = 1;
+
+~bass = Pbind(
+    \degree, Pwhite(0, 7, inf),
+    \octave, 3,    // down 2 octaves
+    \dur, Pwhite(1, 4, inf),
+    \legato, 1,
+    \amp, 0.2
+).collect({ |event|
+    ~lastBassEvent = event;
+}).play(quant: Quant(quant: 1, timingOffset: 0.1));
+
+// shorter form for the Quant object: #[1, 0, 0.1]
+
+~chords = Pbind(
+    \topNote, Pseries(7, Prand(#[-2, -1, 1, 2], inf), inf).fold(2, 14),
+    \bassTriadNotes, Pfunc { ~lastBassEvent[\degree] } + #[0, 2, 4],
+        // merge triad into topnote
+        // raises triad notes to the highest octave lower than top note
+        // div: is integer division, so x div: 7 * 7 means the next lower multiple of 7
+    \merge, (Pkey(\topNote) - Pkey(\bassTriadNotes)) div: 7 * 7 + Pkey(\bassTriadNotes),
+        // add topNote to the array if not already there
+    \degree, Pfunc { |ev|
+        if(ev[\merge].detect({ |item| item == ev[\topNote] }).isNil) {
+            ev[\merge] ++ ev[\topNote]
+        } {
+            ev[\merge]
+        }
+    },
+    \dur, Pwrand([Pseq([0.5, Pwhite(1, 3, 1), 0.5], 1), 1, 2, 3], #[1, 3, 2, 2].normalizeSum, inf),
+    \amp, 0.05
+).play(quant: 1);
+)
+
+~bass.stop;
+~chords.stop;
+
+
+f = { |topNote, triad|
+    var    x;
+    x = (topNote - triad).debug("initial transposition steps");
+    x = (x div: 7).debug("octaves to transpose");
+    x = (x * 7).debug("steps to transpose");
+    x + triad
+};
+
+f.value(7, #[0, 2, 4]);
+--> [ 7, 2, 4 ] (first inversion triad)
+
+
+
+
+
+(
+p = Penvir((), Ptpar([
+    0.0, Pbind(
+        \degree, Pwhite(0, 7, inf),
+        \octave, 6,    // down 2 octaves
+        \dur, Pwhite(1, 4, inf),
+        \legato, 1,
+        \amp, 0.2,
+        \timingOffset, 0.1
+    ).collect({ |event|
+        ~lastBassEvent = event;
+    }),
+    0.1, Pbind(
+        \topNote, Pseries(7, Prand(#[-2, -1, 1, 2], inf), inf).fold(2, 14),
+        \bassTriadNotes, Pfunc { ~lastBassEvent[\degree] } + #[0, 2, 4],
+        \merge, (Pkey(\topNote) - Pkey(\bassTriadNotes)) div: 7 * 7 + Pkey(\bassTriadNotes),
+        \degree, Pfunc { |ev|
+            if(ev[\merge].detect({ |item| item == ev[\topNote] }).isNil) {
+                ev[\merge] ++ ev[\topNote]
+            } {
+                ev[\merge]
+            }
+        },
+        \dur, Pwrand([Pseq([0.5, Pwhite(1, 3, 1), 0.5], 1), 1, 2, 3], #[1, 3, 2, 2].normalizeSum, inf),
+        \amp, 0.05
+    )
+])).play;
+)
+
+p.stop;
