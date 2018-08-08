@@ -7,8 +7,8 @@
 //cadeau til the flying saucer
 (
 ~numberOfAudioFilesLoaded = 0; ~key; ~basepath; ~makeView; ~viewOn = 0;
-//"C:/Users/na/Desktop/Supercollider SCD/folder new turn/LYDSERVER.scd".load; // for laptop
-"X:/Supercollider SCD/folder new turn/LYDSERVER.scd".load;                    // for stationary
+"C:/Users/na/Desktop/Supercollider SCD/folder new turn/LYDSERVER.scd".load; // for laptop
+//"X:/Supercollider SCD/folder new turn/LYDSERVER.scd".load;                    // for stationary
 s.doWhenBooted{/*var ~basepath;
 	~basepath = FileDialog.new({arg ok, path;
 	if (ok, {
@@ -17,7 +17,7 @@ s.doWhenBooted{/*var ~basepath;
 	}, fileMode: 2);*/
 
 	fork{
-		var humansAreSlow = 0.00005,
+		var humansAreSlow = 0.00015,
 		numberOfAudioFilesFound = 0, numberOfSkippedAudioFiles = 0;
 		var fileSize, totalFileSize = 0, totalFileSizeLoaded = 0;
 
@@ -27,7 +27,9 @@ s.doWhenBooted{/*var ~basepath;
 
 		//~basepath = PathName.new("C:/Users/na/Desktop/lydfiler");// <-------choose folder
 		//~basepath = PathName.new("X:/lydfiler/clarinet");
-		~basepath = PathName.new("X:/SALKIN_T5 SSD CONTENT/live projects/lyd bibliotek/DRUM Samples/MIX");
+		//~basepath = PathName.new("X:/SALKIN_T5 SSD CONTENT/live projects/lyd bibliotek/DRUM Samples/MIX");
+		~basepath = PathName.new("C:/Users/na/Desktop/MIX");
+
 
 		0.1.wait; //start hang time
 
@@ -330,38 +332,39 @@ s.doWhenBooted{/*var ~basepath;
 ~makeView.reset;
 ~makeView.play(AppClock);
 
+/* work?
 ~bus=Bus.audio(s,2);
-
 ~fxBus=Bus.audio(s,2);
+InBus.ar(~bus,2)
+*/
 
 Pdef(\layere).fadeTime = 10.0;
 Pdef(\layere).stop;
 
 (
-
 Pdef(\layere, {
 	var bus, effectbus, dir = 1.0;
 
-	bus = 4; // stereo ud til summing
+	bus = 18; // stereo ud til summing
 	effectbus = 20; // stereo
 
 	Ndef(\summing, {var in, sig;
-		in = In.ar([4,5]);
+		in = In.ar([18,19]);
 		sig = CompanderD.ar(in,0.2,0.3,1,0.01,0.1);
 		sig = Limiter.ar(sig, 0.9);
 		sig = sig.clip(-0.99, 0.99);
 		sig * 0.9;
-	}).playN([0,1]);
+	}).playN([2,3,4,5]);
 
 	Ppar([
 		Pbind( // synths
 			\out, bus,
 			\effectBus, effectbus,
-			\dur, Pseq([1,3,2],inf),
+			\dur, Pseq([2,1,2,1,1,1,3,2,1,1,0.5,0.5,Rest(0.5),0.5,Rest(1),1,3,2,Rest(0.5),0.5,Rest(1),2],inf),//Pseq([1,3,2],inf),
 			//Pseq([1,Rest(1/3),1,2,Rest(0.5),1,Rest(1/3),1,2,Rest(1/3),1,Rest(1/3),1,Rest(1/3),1],inf),
 			\amp, 0.8,//Pseq([0.9,0.5,0.7,0.8,0.3,0.8], inf)* 0.7,
 			\loop, 0,
-			\rate, 0.7,//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
+			\rate, Pseq([0.9,0.93,0.86], inf),//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
 			\startPos, 0.0,//Pbrown(0,1,0.1,inf),
 			\attack, 0.001,
 			\decay, 1,
@@ -369,11 +372,19 @@ Pdef(\layere, {
 			\release, 0.9,
 			\pan, Pxrand([-0.25, -0.15, 0.0, 0.15, 0.25], inf),
 			\spread, 0.6,
-			\direction, 0.95,//Pseq([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
+			\direction, 0.00,//Pseq([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
 			\send, Pfunc({|envir|
 				dir = envir.direction;
 			}),
-			\file, Pseq([1,2,3,4,5,6,7,234,234,234,234,234,234,234,234,Prand((1..313)),1,43,25,Prand((1..313)),Prand((1..313)),Prand((1..313))], inf),
+			\file,
+			Pseq(
+				[
+					Pstep([296,29,123,297,29],12)
+					//Pstep([28,301,303,303,303,303,303,303],22),
+					/*1,2,3,4,5,6,7,232,232,232,233,232,232,232,232,Prand((1..313)),1,43,25,Prand((1..313)),Prand((1..313)),Prand((1..313)),
+					1,2,3,4,5,6,7,232,23,21,231,230,232,22,232,Prand((1..313)),1,40,25,Prand((1..313)),Prand((1..313)),Prand((1..313)),
+					1,2,3,4,5,6,7,212,29,13,291,290,222,21,202,Prand((100..109)),1,49,125,Prand((100..213)),Prand((100..113)),Prand((1..213))*/
+				], inf),
 			// eksempel på file behaviourur --_>  youyou.wav weird channel behavior CHECK IT OUT
 			\bufnum,Pfunc({|envir|
 				~key = ('data'++(envir.file-1));
@@ -443,7 +454,7 @@ Pdef(\layere, {
 			}),
 		)
 	])/*.trace*/;
-}).count(n:32).play(TempoClock(128.57/60*4));
+}).count(n:16).play(TempoClock(130.60/60*4));
 )
 
 
@@ -524,7 +535,7 @@ Pbind(\dur, 0.005, \degree, Pwhite(0, 3) +.x Pseq([[-4,-2,0,2,4,6], 6, [0,3,9], 
 
 ~fed = Buffer.alloc(s, Server.default.sampleRate * 0.6, 1);
 (
-{
+Ndef(\ghost,{
     var in, pos, snd;
     in = Impulse.ar(0);
     snd = LocalIn.ar(1) * 0.995; // <- fb coefficient
@@ -536,8 +547,8 @@ Pbind(\dur, 0.005, \degree, Pwhite(0, 3) +.x Pseq([[-4,-2,0,2,4,6], 6, [0,3,9], 
     snd = Splay.ar(DelTapRd.ar(~fed, pos, { rrand(0.05, 0.2) } ! 20));
     //snd = snd + NHHall.ar(snd, 5);
 	snd = snd + JPverb.ar(snd, 10);
-    snd = snd * -15.dbamp;
-}.play;
+    snd = snd * -20.dbamp;
+}).playN([2,3,5]);
 )
 
 
