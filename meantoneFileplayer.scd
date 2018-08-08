@@ -1,7 +1,7 @@
 (
 ~numberOfAudioFilesLoaded = 0; ~key; ~basepath; ~makeView; ~viewOn = 0;
-//"C:/Users/na/Desktop/Supercollider SCD/folder new turn/LYDSERVER.scd".load;
-"X:/Supercollider SCD/folder new turn/LYDSERVER.scd".load;
+"C:/Users/na/Desktop/Supercollider SCD/folder new turn/LYDSERVER.scd".load;
+//"X:/Supercollider SCD/folder new turn/LYDSERVER.scd".load;
 s.doWhenBooted{/*var ~basepath;
 	~basepath = FileDialog.new({arg ok, path;
 	if (ok, {
@@ -14,11 +14,11 @@ s.doWhenBooted{/*var ~basepath;
 		numberOfAudioFilesFound = 0, numberOfSkippedAudioFiles = 0;
 		var fileSize, totalFileSize = 0, totalFileSizeLoaded = 0;
 
-		var maxLoad = 8000/*MB*/*1e6; /*4000 max tested on laptop, 8000 tested on desktop*/
+		var maxLoad = 2000/*MB*/*1e6; /*4000 max tested on laptop, 8000 tested on desktop*/
 		//var maxAmountFileLoad = 10;
 		// dont mistake this from saying anything about how much memory scsynth eats
 
-		~basepath = PathName.new("X:/lydfiler/mona sigler generate spasm/philharmony samples MP3 to WAV/tones/selection");
+		~basepath = PathName.new("C:/Users/na/Desktop/lydfiler/resynthesis/gamalan/snippets");
 		// <-------choose folder
 
 		0.1.wait; //start hang time
@@ -118,20 +118,22 @@ s.doWhenBooted{/*var ~basepath;
 
 
 			~mono = SynthDef(\file_mono, {
-				arg out=0, bufnum, basefreq=440, freq, amp=0.5, pan=0, attack = 0.2, decay = 0.2, sustain = 0.5, release = 0.1, gate=1;
-				var sig, env, rate;
+				arg out=0, bufnum, basefreq=440, freq, amp=0.5, pan=0, attack = 0.2, decay = 0.2, sustain = 0.5, release = 0.1, gate=1, startPos = 0;
+				var sig, env, rate, frames;
+				frames = BufFrames.kr(bufnum);
 				rate = freq/basefreq;
-				sig = PlayBufCF.ar(1, bufnum, rate*BufRateScale.kr(bufnum), loop: 0, lag: 0.8, n: 1);
+				sig = PlayBufCF.ar(1, bufnum, rate*BufRateScale.kr(bufnum), 1, startPos*frames, loop: 0, lag: 0.8, n: 1);
 				env = EnvGen.kr(Env.adsr(attack, decay, sustain, release), gate, doneAction: 2);
 				sig = sig * env;
 				Out.ar(out, Splay.ar(sig, 1, amp, pan));
 			}).add;
 
 			~stereo = SynthDef(\file_stereo, {
-				arg out=0, bufnum, basefreq=440, freq, amp=0.5, pan=0, attack = 0.2, decay = 0.2, sustain = 0.5, release = 0.1, gate=1;
-				var sig, env, rate;
+				arg out=0, bufnum, basefreq=440, freq, amp=0.5, pan=0, attack = 0.2, decay = 0.2, sustain = 0.5, release = 0.1, gate=1, startPos = 0;
+				var sig, env, rate, frames;
+				frames = BufFrames.kr(bufnum);
 				rate = freq/basefreq;
-				sig = PlayBufCF.ar(2, bufnum, rate*BufRateScale.kr(bufnum), loop: 0, lag: 0.8, n: 1);
+				sig = PlayBufCF.ar(2, bufnum, rate*BufRateScale.kr(bufnum), 1, startPos*frames, loop: 0, lag: 0.8, n: 1);
 				env = EnvGen.kr(Env.adsr(attack, decay, sustain, release), gate, doneAction: 2);
 				sig = sig * env;
 				Out.ar(out, Splay.ar(sig, 1, amp, pan));
@@ -139,9 +141,9 @@ s.doWhenBooted{/*var ~basepath;
 
 			humansAreSlow.wait;
 			"\n\t\tdone".postln;
-			(humansAreSlow*2).wait;
+			/*(humansAreSlow*2).wait;
 			"\n\t\tinit MIDIClient\n".postln;
-			MIDIClient.init;
+			MIDIClient.init;*/
 		}, {"\n\t\tno files loaded no synths build!!!"});
 	}
 })
@@ -149,7 +151,7 @@ s.doWhenBooted{/*var ~basepath;
 
 
 
-m = MIDIOut(1); // MOTU
+m = MIDIOut(2); // MOTU
 
 
 (
@@ -167,14 +169,17 @@ Scale.directory
 // a = Scale.dorian;
 // a.tuning_(\mean4);
 
+
+// parth_01 && johnston tuning
+
 a = Scale.major;
 b = Scale.minor;
 h = Scale.dorian;
 v = Scale.mixolydian;
-a.tuning_(\mean4);
+/*a.tuning_(\mean4);
 b.tuning_(\mean4);
 h.tuning_(\mean4);
-v.tuning_(\mean4);
+v.tuning_(\mean4);*/
 )
 
 
@@ -183,18 +188,25 @@ Pdef(\emu).stop
 (
 Pdef(\emu, {
 	Ppar([
-		c=Pbind(
+		/*c=*/Pbind(
 			\out, 0,
-			\amp, Pexprand(-16.dbamp, -12.dbamp),
+			\amp, Pexprand(-20.dbamp, -17.dbamp),
+			//\startPos, 0.0,
 			\pan, Pxrand((-10..10)/10, inf),
-			\scale, a,//Pstep([a,b,v], 64, inf),
-			\root, 0,//Pstep([-4,0,-7], 64, inf),
-			\octave, Pseq([5], inf),
-			//
-			\degree, Pseq([[2,4,5],6,[2,4,5],6,[2,4,5],8,[0,3,5],7,4,6,9,12,14,6,4,5,
+			\scale,
+			Pseq([a],inf),
+			\root, Pstep([-4,0,-7], 64, inf),
+			\octave, Pseq([5,5,6,5,6], inf),
+			\degree,
+			Pseq([0,6,4], inf),
+			//Pseq([[1,3,5],[3,5,7],[1,3,5],4,2,6,5],inf),
+			//Pseq([[2,6,4],[8,4,6],[1,3,5],9,5,3,6,9,10,14,16],inf),
+			//Pseq(1+[[2,5,4],[0,3,2],[-2,0,4]], inf),
+			/*Pseq([[2,4,5],6,[2,4,5],6,[2,4,5],8,[0,3,5],7,4,6,9,12,14,6,4,5,
 				[0,2,3],4,[0,2,6],4,[0,2,3],4,[0,2,6],4,[0,2,3],4,[0,2,6],2,5,2,4,7,10,12,4,2,3
-			],inf),
-			\dur, Pseq([2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,4,1,2,2,1,2,4,2,2,2,2,2,2,2,2,2],inf),
+			],inf),*/
+			\dur, Pseq([8,12,17],inf),
+			//Pseq([4,5,7,3,1,1,1,1],inf),
 			/*Pseq(
 				[
 					Pseq([3,1,2], 32),
@@ -204,9 +216,9 @@ Pdef(\emu, {
 			], inf),*/
 			\attack, 0.01,
 			\decay, 0.01,
-			\sustain, 3,//4,
+			\sustain, 9,//4,
 			\release, 0.2,
-			\file, Prand((1..58), inf),//Pseq([22,12,8], inf),//Pstep((1..48), 16, inf),
+			\file, Pseq([1,2],inf),
 			\bufnum,Pfunc({|envir|
 				~key = ('data'++(envir.file-1));
 				//topEnvironment[~key.asSymbol].path.postln;
@@ -231,7 +243,7 @@ Pdef(\emu, {
 					}
 				);
 			});
-		),
+		)/*,
 		o=Pbind(
 			\type, \magi,
 			//\scale, a,
@@ -241,14 +253,14 @@ Pdef(\emu, {
 			\dur, Pseq([3,5,1],inf),
 			\ctlNum, 1,
 			\control, Pseq([0,0,0,30,60,120,70,90], inf),
-		)
-		.trace(\ctlNum, prefix: " ctlNum ")
+		)*/
+		/*.trace(\ctlNum, prefix: " ctlNum ")
 		.trace(\control, prefix: " control ")
 		.trace(\degree, prefix: "degree ")
-		.trace(\dur, prefix: " dur ")
+		.trace(\dur, prefix: " dur ")*/
 	]);
 
-	Ppar([o <> (type: \midi, midiout: m), c]); // sum in paralllel
+	//Ppar([o <> (type: \midi, midiout: m), c]); // sum in paralllel
 }).play(TempoClock(112/60*4));
 )
 
