@@ -25,7 +25,7 @@ s.doWhenBooted{/*var ~basepath;
 		// dont mistake this from saying anything about how much memory scsynth eats
 
 		//~basepath = PathName.new("C:/Users/na/Desktop/lydfiler");// <-------choose folder
-		~basepath = PathName.new("/Volumes/Untitled/VT SOUND/hollywood acid fx Project/Samples/Recorded/");
+		~basepath = PathName.new("/f_12_lydfiler/Benny/vanninsekter/");
 		0.1.wait; //start hang time
 
 		// check all files in ~basepath
@@ -337,21 +337,21 @@ Pdef(\layere, {
 		Pbind( // synths
 			\out, bus,
 			\effectBus, effectbus,
-			\dur, Pseq([1,1,1,2,2], inf),
-			\amp, 0.7,//Pseq([0.9,0.5,0.7,0.8,0.3,0.8], inf)* 0.7,
+			\dur, 8,//Pseq([1,1,1,2,2], inf),
+			\amp, 0.4,//Pseq([0.9,0.5,0.7,0.8,0.3,0.8], inf)* 0.7,
 			\loop, 0,
-			\rate, 0.2,//Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
-			\startPos, 0.0,//Pseq([0.3, 0.5, 0.7, 0.5, 0.29, 0.99, 0.01], inf),
-			\attack, 0.001,//4.02,
-			\sustain, 0.1,//15.001,
-			\release, 0.5,//4.02,
+			\rate, 0.5*Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
+			\startPos, Pseq([0.3, 0.5, 0.7, 0.5, 0.29, 0.99, 0.01], inf),
+			\attack, 0.1,//4.02,
+			\sustain, 0.9,//15.001,
+			\release, 9.5,//4.02,
 			\pan, Pxrand([-0.2, -0.1, 0.0, 0.1, 0.2], inf),
 			\spread, 0.6,
 			\direction, Pseq([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
 			\send, Pfunc({|envir|
 				dir = envir.direction;
 			}),
-			\file, Pseq((1..3), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
+			\file, Pseq((1..12), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
 			\bufnum,Pfunc({|envir|
 				~key = ('data'++(envir.file-1));
 				topEnvironment[~key.asSymbol].path.postln;
@@ -394,7 +394,7 @@ Pdef(\layere, {
 		),
 		Pbind( // efx
 			\out, bus,
-			\dur, Pseq([1,1,1,2,2], inf),
+			\dur, 8,//Pseq([1,1,1,2,2], inf),
 			\amp, 0.8,
 			\attack, 0.002,//2.5,
 			\sustain, 0.0002,//2.0,
