@@ -7,7 +7,7 @@
 //cadeau til the flying saucer
 (
 ~numberOfAudioFilesLoaded = 0; ~key; ~basepath; ~makeView; ~viewOn = 0;
-"C:/Users/na/Desktop/Supercollider SCD/folder new turn/LYDSERVER.scd".load;
+
 s.doWhenBooted{/*var ~basepath;
 	~basepath = FileDialog.new({arg ok, path;
 	if (ok, {
@@ -21,13 +21,14 @@ s.doWhenBooted{/*var ~basepath;
 		var fileSize, totalFileSize = 0, totalFileSizeLoaded = 0;
 
 		var maxLoad = 4000/*4000 max tested*//*MB*/*1e6;
-		//var maxAmountFileLoad = 10;
+		// var maxAmountFileLoad = 10;
 		// dont mistake this from saying anything about how much memory scsynth eats
 
 		//~basepath = PathName.new("C:/Users/na/Desktop/lydfiler");// <-------choose folder
-		~basepath = PathName.new("/f_12_lydfiler/Benny/vanninsekter/");
+		~basepath = PathName.new("/h_18_lydfiler/FORVTMingler/selection");
 		0.1.wait; //start hang time
 
+        // the return of the For loop, -- bad idea, should offcourse use ~basepath.files.do
 		// check all files in ~basepath
 		for (0, ~basepath.files.size-1, {arg i;
 			humansAreSlow.wait;
@@ -124,13 +125,14 @@ s.doWhenBooted{/*var ~basepath;
 
 			~mono = SynthDef(\mono, {
 				|
-				bufnum, direction = 1, out = 0, effectBus, loop = 0, rate = 1, spread = 1, pan = 0, amp = 0.5,
+				bufnum, freq, direction = 1, out = 0, effectBus, loop = 0, rate = 1, spread = 1, pan = 0, amp = 0.5,
 				attack = 0.2, sustain = 0.5, release = 1.0, startPos = 0,
 				gate = 1
 				|
 				var numChan, sig, key, frames, env, file;
 				numChan = 1;
 				frames = BufFrames.kr(bufnum);
+                rate = freq/440;
 				sig = PlayBufCF.ar(
 					numChan,
 					bufnum,
@@ -148,13 +150,14 @@ s.doWhenBooted{/*var ~basepath;
 
 			~stereo = SynthDef(\stereo, {
 				|
-				bufnum, direction = 1, out = 0, effectBus, loop = 0, rate = 1, spread = 1, pan = 0, amp = 0.5,
+				bufnum, freq, direction = 1, out = 0, effectBus, loop = 0, rate = 1, spread = 1, pan = 0, amp = 0.5,
 				attack = 0.2, sustain = 0.5, release = 1.0, startPos = 0,
 				gate = 1
 				|
 				var numChan, sig, key, frames, env, file;
 				numChan = 2;
 				frames = BufFrames.kr(bufnum);
+                rate = freq/440;
 				sig = PlayBufCF.ar(
 					numChan,
 					bufnum,
@@ -315,112 +318,7 @@ s.doWhenBooted{/*var ~basepath;
 ~makeView.play(AppClock);
 
 
-Pdef(\layere).fadeTime = 10.0;
-Pdef(\layere).stop;
 
-(
-
-Pdef(\layere, {
-	var bus, effectbus, dir = 1.0;
-
-	bus = 4; // stereo ud til summing
-	effectbus = 20; // stereo
-
-	Ndef(\summing, {var in, sig;
-		in = In.ar([4,5]);
-		sig = Limiter.ar(in, 0.9);
-		sig = sig.clip(-0.99, 0.99);
-		sig * 0.9;
-	}).playN([0,1]);
-
-	Ppar([
-		Pbind( // synths
-			\out, bus,
-			\effectBus, effectbus,
-			\dur, 8,//Pseq([1,1,1,2,2], inf),
-			\amp, 0.4,//Pseq([0.9,0.5,0.7,0.8,0.3,0.8], inf)* 0.7,
-			\loop, 0,
-			\rate, 0.5*Pseq([0.89, 0.8, 0.79], inf)*Pxrand([0.4,0.2,0.5,0.7,0.9,1.0,1.5], inf),
-			\startPos, Pseq([0.3, 0.5, 0.7, 0.5, 0.29, 0.99, 0.01], inf),
-			\attack, 0.1,//4.02,
-			\sustain, 0.9,//15.001,
-			\release, 9.5,//4.02,
-			\pan, Pxrand([-0.2, -0.1, 0.0, 0.1, 0.2], inf),
-			\spread, 0.6,
-			\direction, Pseq([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0], inf), // dry wet
-			\send, Pfunc({|envir|
-				dir = envir.direction;
-			}),
-			\file, Pseq((1..12), inf),// eksempel  youyou.wav weird channel behavior CHECK IT OUT
-			\bufnum,Pfunc({|envir|
-				~key = ('data'++(envir.file-1));
-				topEnvironment[~key.asSymbol].path.postln;
-				topEnvironment[~key.asSymbol]
-				//topEnvironment[envir.file]
-			}),
-			\instrument, Pfunc({|envir|
-				var result, numChannels;
-				~key = ('data'++envir.file);
-
-				numChannels = topEnvironment[~key.asSymbol].numChannels;
-				//var numChannels = topEnvironment[envir.file].numChannels;
-
-				switch(numChannels,
-					1, {
-						result = ~mono; // 'mono'
-					},
-					2, {
-						result = ~stereo; // 'stereo'
-					},
-					{
-						result = ~mono; // 'mono'
-					}
-				);
-
-				/*if (envir.direction < 1,{
-				"\t\tefx-on".postln;
-				"\t\t baby".postln;
-				Synth.after(1/*result??*/, \efx,
-				[
-				\attack, 0.001,
-				\sustain, 0.1,
-				\release, 6.1,//envir.release,
-				\amp, 0.1
-				]
-				);
-				});*/
-				result;
-			}),
-		),
-		Pbind( // efx
-			\out, bus,
-			\dur, 8,//Pseq([1,1,1,2,2], inf),
-			\amp, 0.8,
-			\attack, 0.002,//2.5,
-			\sustain, 0.0002,//2.0,
-			\release, 0.4, //7.0,
-			\pan, Pxrand([-1.0, -0.5, 0.0, 0.5, 1.0], inf),
-			\spread, 0.3,
-			\efx, 1,
-			\instrument, Pfunc({|envir|
-				var result;
-				("\n\t\tdir:: (send from generator Pbind):\n\t\t"++dir).postln;
-				if (dir < 1, {
-					"\t\tefx-on".postln;
-					"\t\t baby".postln;
-					switch(envir.efx,
-						0, {"\t\tdelay".postln; result = 'delay'},
-						1, {"\t\tmingl".postln; result = 'mingl'},
-						{ result = 'nil'}
-					);
-					"\n".post;
-				}, { result = 'nil' });
-				result;
-			}),
-		)
-	])/*.trace*/;
-}).play(TempoClock(132/60*4));
-)
 
 
 
