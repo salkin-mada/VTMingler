@@ -198,11 +198,27 @@ Pdef(\emu, {
 			\pan, Pxrand((-10..10)/10, inf),
 			\scale,
 			Pseq([a],inf),
+<<<<<<< HEAD
 			\root, 0,//Pstep([0,1,2], 5, inf),
 			//Pstep([-4,0,-7], 64, inf),
 			\octave, Pseq([5,5,5,5], inf),
 			\degree,
 			Pseq(
+=======
+			\root, 0,//Pstep([-4,0,-7], 64, inf),
+			\octave, Pseq([8,7], inf),
+			\degree,
+			Pseq([[1,3,5],[3,5,8]], inf),
+			//Pseq([[1,3,5],[3,5,7],[1,3,5],4,2,6,5],inf),
+			//Pseq([[2,6,4],[8,4,6],[1,3,5],9,5,3,6,9,10,14,16],inf),
+			//Pseq(1+[[2,5,4],[0,3,2],[-2,0,4]], inf),
+			/*Pseq([[2,4,5],6,[2,4,5],6,[2,4,5],8,[0,3,5],7,4,6,9,12,14,6,4,5,
+				[0,2,3],4,[0,2,6],4,[0,2,3],4,[0,2,6],4,[0,2,3],4,[0,2,6],2,5,2,4,7,10,12,4,2,3
+			],inf),*/
+			\dur, Pseq([1],inf),
+			//Pseq([4,5,7,3,1,1,1,1],inf),
+			/*Pseq(
+>>>>>>> 81249b49311d8985c32ab208b9b6def3fbebdc26
 				[
 					0
 			], inf),
@@ -213,9 +229,15 @@ Pdef(\emu, {
 			], inf),
 			\attack, 0.01,
 			\decay, 0.01,
+<<<<<<< HEAD
 			\sustain, 2,//4,
 			\release, 1.6,
 			\file, Pseq([2,5,6,17],inf), //313
+=======
+			\sustain, 3,
+			\release, 0.2,
+			\file, Pseq([1,2],inf),
+>>>>>>> 81249b49311d8985c32ab208b9b6def3fbebdc26
 			\bufnum,Pfunc({|envir|
 				~key = ('data'++(envir.file-1));
 				//topEnvironment[~key.asSymbol].path.postln;
@@ -261,8 +283,13 @@ Pdef(\emu, {
 		.trace(\dur, prefix: " dur ")
 	]);
 
+<<<<<<< HEAD
 	Ppar([o <> (type: \midi, midiout: m), c]); // sum in paralllel
 }).play(TempoClock(~bpm/60*4)));
+=======
+	//Ppar([o <> (type: \midi, midiout: m), c]); // sum in paralllel
+}).play(TempoClock(122/60*4));
+>>>>>>> 81249b49311d8985c32ab208b9b6def3fbebdc26
 )
 
 Pdef(\emu).stop
