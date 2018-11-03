@@ -14,13 +14,12 @@ s.doWhenBooted{/*var ~basepath;
 		numberOfAudioFilesFound = 0, numberOfSkippedAudioFiles = 0;
 		var fileSize, totalFileSize = 0, totalFileSizeLoaded = 0;
 
-		var maxLoad = 2000/*MB*/*1e6; /*4000 max tested on laptop, 8000 tested on desktop*/
+		var maxLoad = 6000/*MB*/*1e6; /*4000 max tested on laptop, 8000 tested on desktop*/
 		//var maxAmountFileLoad = 10;
 		// dont mistake this from saying anything about how much memory scsynth eats
 
-		~basepath = PathName.new("C:/Users/na/Desktop/lydfiler/resynthesis/gamalan/snippets");
+		~basepath = PathName.new();
 		// <-------choose folder
-
 		0.1.wait; //start hang time
 
 		// check all files in ~basepath
@@ -141,9 +140,9 @@ s.doWhenBooted{/*var ~basepath;
 
 			humansAreSlow.wait;
 			"\n\t\tdone".postln;
-			/*(humansAreSlow*2).wait;
+			(humansAreSlow*2).wait;
 			"\n\t\tinit MIDIClient\n".postln;
-			MIDIClient.init;*/
+			MIDIClient.init;
 		}, {"\n\t\tno files loaded no synths build!!!"});
 	}
 })
@@ -151,7 +150,7 @@ s.doWhenBooted{/*var ~basepath;
 
 
 
-m = MIDIOut(2); // MOTU
+m = MIDIOut(1); // MOTU
 
 
 (
@@ -183,42 +182,40 @@ v.tuning_(\mean4);*/
 )
 
 
+~bpm = 128;
+c = MIDIClockOut("2- MOTU Pro Audio Midi Out", "2- MOTU Pro Audio Midi Out", TempoClock(~bpm/60));
 
-Pdef(\emu).stop
+
+Pdef(\emu).stop; c.stop; "patterns and clock stopped".post;
 (
+c.start; // MIDI CLOCK
 Pdef(\emu, {
 	Ppar([
-		/*c=*/Pbind(
-			\out, 0,
-			\amp, Pexprand(-20.dbamp, -17.dbamp),
-			//\startPos, 0.0,
+		c=Pbind(
+			\out, 2,
+			\amp, Pexprand(-15.dbamp, -12.dbamp),
+			\startPos, 0.0,
 			\pan, Pxrand((-10..10)/10, inf),
 			\scale,
 			Pseq([a],inf),
-			\root, Pstep([-4,0,-7], 64, inf),
-			\octave, Pseq([5,5,6,5,6], inf),
+			\root, 0,//Pstep([0,1,2], 5, inf),
+			//Pstep([-4,0,-7], 64, inf),
+			\octave, Pseq([5,5,5,5], inf),
 			\degree,
-			Pseq([0,6,4], inf),
-			//Pseq([[1,3,5],[3,5,7],[1,3,5],4,2,6,5],inf),
-			//Pseq([[2,6,4],[8,4,6],[1,3,5],9,5,3,6,9,10,14,16],inf),
-			//Pseq(1+[[2,5,4],[0,3,2],[-2,0,4]], inf),
-			/*Pseq([[2,4,5],6,[2,4,5],6,[2,4,5],8,[0,3,5],7,4,6,9,12,14,6,4,5,
-				[0,2,3],4,[0,2,6],4,[0,2,3],4,[0,2,6],4,[0,2,3],4,[0,2,6],2,5,2,4,7,10,12,4,2,3
-			],inf),*/
-			\dur, Pseq([8,12,17],inf),
-			//Pseq([4,5,7,3,1,1,1,1],inf),
-			/*Pseq(
+			Pseq(
 				[
-					Pseq([3,1,2], 32),
-					Pseq([5,3,1,2,5,1,3], 4),
-					Pseq([3,1,2,4], 16),
-					Pseq([5,3,1,2,Rest(0.5),2.5,5,1,3,Rest(0.5),2.5,Rest(0.5),2.5], 8)
-			], inf),*/
+					0
+			], inf),
+			\dur, Pseq([
+				3,1,3,1,2,3,1,3,1,3,1,2,3,1,
+				Rest(2/3),Rest(6/8),1/3,Rest(2/3),1/3,Rest(2/3),1/3,Rest(2/3),1/3,Rest(8/3),
+				1/3,Rest(2/3),1/3,Rest(2/3),1/3,Rest(2/3),1/3,Rest(2/3),1/3,Rest(2/3),1/3,Rest(2/3)
+			], inf),
 			\attack, 0.01,
 			\decay, 0.01,
-			\sustain, 9,//4,
-			\release, 0.2,
-			\file, Pseq([1,2],inf),
+			\sustain, 2,//4,
+			\release, 1.6,
+			\file, Pseq([2,5,6,17],inf), //313
 			\bufnum,Pfunc({|envir|
 				~key = ('data'++(envir.file-1));
 				//topEnvironment[~key.asSymbol].path.postln;
@@ -243,28 +240,32 @@ Pdef(\emu, {
 					}
 				);
 			});
-		)/*,
+		),
 		o=Pbind(
 			\type, \magi,
 			//\scale, a,
 			//\root, 0, //Pstep([0,10], 3, inf),
-			//\octave, Pseq([6,5], inf),
-			\degree, Pseq([0,1,2,3,4,5,6,7,8], inf),//Pseq([[3,5,1], 7,5,3,9,8,4,5,2,15,18, [9,6,11],8,4,5], inf),
-			\dur, Pseq([3,5,1],inf),
+			\octave, Pseq([3,4], inf),
+			\degree, Pseq([0], inf),//Pseq([[3,5,1], 7,5,3,9,8,4,5,2,15,18, [9,6,11],8,4,5], inf),
+			\dur, Pseq([
+				3,1,3,1,2,3,1,3,1,3,1,2,3,1,
+				Rest(2/3),Rest(6/8),1/3,Rest(2/3),1/3,Rest(2/3),1/3,Rest(2/3),1/3,Rest(8/3),
+				1/3,Rest(2/3),1/3,Rest(2/3),1/3,Rest(2/3),1/3,Rest(2/3),1/3,Rest(2/3),1/3,Rest(2/3)
+			], inf),
 			\ctlNum, 1,
-			\control, Pseq([0,0,0,30,60,120,70,90], inf),
-		)*/
-		/*.trace(\ctlNum, prefix: " ctlNum ")
+			\control, Pseq([100,80,50,20], inf),
+		)
+		.trace(\ctlNum, prefix: " ctlNum ")
 		.trace(\control, prefix: " control ")
 		.trace(\degree, prefix: "degree ")
-		.trace(\dur, prefix: " dur ")*/
+		.trace(\dur, prefix: " dur ")
 	]);
 
-	//Ppar([o <> (type: \midi, midiout: m), c]); // sum in paralllel
-}).play(TempoClock(112/60*4));
+	Ppar([o <> (type: \midi, midiout: m), c]); // sum in paralllel
+}).play(TempoClock(~bpm/60*4)));
 )
 
-
+Pdef(\emu).stop
 
 
 
