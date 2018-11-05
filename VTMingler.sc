@@ -1,3 +1,121 @@
+VTMingler {
+	classvar <path, <buffers;
+	classvar createBuffersFunc;
+
+	const <supportedHeaders = #[
+		"wav",
+		"wave",
+		"aiff",
+		"flac",
+		"raw",
+		"ogg",
+		"vorbis",
+		"sdif"
+	]; 
+
+	*initClass {
+		buffers = Dictionary.new;
+		createBuffersFunc = #{ |server| VTMingler.createBuffers(server) };
+		this.addEventTypeFunc
+	}
+
+	*loadAll { |argPath, server|
+		path = argPath;
+		if (path.isNil) { Error("path is missing").throw };
+		server = server ? Server.default;
+
+		// create buffers on boot
+		ServerBoot.add(createBuffersFunc, server);
+
+		// if server is running, load them now
+		if (server.serverRunning) {
+			this.createBuffers(server)
+		};
+	}
+
+	*free { |server|
+		this.freeBuffers;
+		server = server ? Server.default;
+		ServerBoot.remove(createBuffersFunc, server);
+		"Sample(s) freed".postln;
+	}
+
+	*get { |bank, index|
+		if (buffers.isNil.not) {
+			var bufList = buffers[bank.asSymbol];
+			if (bufList.isNil.not) {
+				index = index % bufList.size;
+				^bufList[index]
+			}
+		};
+		^nil
+	}
+
+	*list {
+		^buffers.keys
+	}
+
+	*displayList {
+		^buffers.keysValuesDo { |bankName, buffers|
+			"% [%]".format(bankName, buffers.size).postln
+		}
+	}
+
+	*freeBuffers {
+		buffers.do { |banks|
+			banks.do { |buf|
+				if (buf.isNil.not) {
+					buf.free
+				}
+			}
+		};
+		buffers.clear;
+	}
+
+	*makeBuffers { |server|
+		this.freeBuffers;
+
+		PathName(path).entries.do { |subfolder|
+			var entries;
+			entries = subfolder.entries.select { |entry|
+				supportedHeaders.includes(entry.extension.asSymbol)
+			};
+			entries = entries.collect { |entry|
+				Buffer.readChannel(server, entry.fullPath, channels: [0])
+			};
+			if (entries.isEmpty.not) {
+				buffers.add(subfolder.folderName.asSymbol -> entries)
+			}
+		};
+
+		"% samples loaded".format(buffers.size).postln;
+	}
+
+	*addEventTypeFunc {
+		Event.addEventType(\sample, {
+			if (~buf.isNil) {
+				var bank = ~bank;
+				if (bank.isNil.not) {
+					var index = ~index ? 0;
+					~buf = SampleBank.get(bank, index)
+				} {
+					var sample = ~sample;
+					if (sample.isNil.not) {
+						var pair, bank, index;
+						pair = sample.split($:);
+						bank = pair[0].asSymbol;
+						index = if (pair.size == 2) { pair[1].asInt } { 0 };
+						~buf = SampleBank.get(bank, index)
+					}
+				}
+			};
+			~type = \note;
+			currentEnvironment.play
+		})
+	}
+}
+
+
 VTMBufferPlay {
 
 	// stolen PlayBufCF
@@ -65,7 +183,7 @@ VTMBufferPlay {
 
 VTMBufferFiles {
 
-	var supportedHeaders = #[
+	const <supportedHeaders = #[
 		"wav",
 		"wave",
 		"aiff",
@@ -116,7 +234,7 @@ VTMBufferFiles {
 	buildSynth {
 		SynthDef(\VTMingler, {
 			|
-			bufnum, direction = 1, out = 0, effectBus, loop = 0, rate = 1, spread = 1, pan = 0, amp = 0.5,
+			bufnum, out = 0, loop = 0, rate = 1, spread = 1, pan = 0, amp = 0.5,
 			attack = 0.01, decay = 0.5, sustain = 0.5, release = 1.0, startPos = 0,
 			gate = 1
 			|
@@ -132,8 +250,7 @@ VTMBufferFiles {
 			);
 			env = EnvGen.ar(Env.adsr(attack, decay, sustain, release), gate, doneAction: 2);
 			sig = Splay.ar(sig, spread: spread, center: pan, level: amp);
-			Out.ar(out, (sig*env)*direction);
-			Out.ar(effectBus, sig*(1 - direction));
+			Out.ar(out, (sig*env));
 		}).add;
 
 	}
@@ -188,44 +305,3 @@ VTMBufferFolders {
 	}
 
 }
-
-// VTMingler {
-// 	/**new { arg server, path;
-//
-// 	^super.new.init(server, path);
-//
-// 	}
-//
-// 	init { arg server, path;
-//
-// 	var oiu;
-//
-// 	^this.buildSynths(oiu, server, path);
-//
-// 	}*/
-//
-// 	buildSynth {/*|oiu, server, path|*/
-// 		SynthDef(\VTMingler, {
-// 			|
-// 			bufnum, direction = 1, out = 0, effectBus, loop = 0, rate = 1, spread = 1, pan = 0, amp = 0.5,
-// 			attack = 0.01, decay = 0.5, sustain = 0.5, release = 1.0, startPos = 0,
-// 			gate = 1
-// 			|
-// 			var numChan, sig, key, frames, env, file;
-// 			if(BufChannels.kr(bufnum) == 2, {numChan = 2},{numChan = 1});
-// 			frames = BufFrames.kr(bufnum);
-// 			sig = VTMBufferPlay.ar(
-// 				numChan,
-// 				bufnum,
-// 				rate*BufRateScale.kr(bufnum),
-// 				1,
-// 				startPos*frames, loop: loop
-// 			);
-// 			env = EnvGen.ar(Env.adsr(attack, decay, sustain, release), gate, doneAction: 2);
-// 			sig = Splay.ar(sig, spread: spread, center: pan, level: amp);
-// 			Out.ar(out, (sig*env)*direction);
-// 			Out.ar(effectBus, sig*(1 - direction));
-// 		}).add;
-//
-// 	}
-// }
