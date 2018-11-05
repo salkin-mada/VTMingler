@@ -1,6 +1,5 @@
 VTMingler {
-	classvar <path, <buffers;
-	classvar createBuffersFunc;
+	classvar <buffers;
 
 	const <supportedHeaders = #[
 		"wav",
@@ -11,27 +10,94 @@ VTMingler {
 		"ogg",
 		"vorbis",
 		"sdif"
-	]; 
+	];
 
-	*initClass {
+	*new { arg server, path, maxLoadInMb = 1000;
+		^super.new.init(server, path, maxLoadInMb);
+	}
+
+	init { arg server, path, maxLoadInMb;
 		buffers = Dictionary.new;
-		createBuffersFunc = #{ |server| VTMingler.createBuffers(server) };
-		this.addEventTypeFunc
+		^this.loadDirTree(buffers, server, path, maxLoadInMb);
 	}
 
-	*loadAll { |argPath, server|
-		path = argPath;
-		if (path.isNil) { Error("path is missing").throw };
-		server = server ? Server.default;
+	loadRootFiles {|buffers, server, path, maxLoadInMb|
+		// If the root of the folder contains files, add them to the key \root
+		if(PathName(path).files.size > 0,
+			buffers.add(\root -> this.loadBuffersToTopEnvir(server, path, maxLoadInMb) );
+		)
 
-		// create buffers on boot
-		ServerBoot.add(createBuffersFunc, server);
+	}
 
-		// if server is running, load them now
-		if (server.serverRunning) {
-			this.createBuffers(server)
+	loadDirTree {|buffers, server, path, maxLoadInMb|
+		PathName(path).folders.collect{|item|
+			// Load folder of sounds into an array at buffers key of the folder name
+			item.isFolder.if{
+				buffers.add(item.folderName.asSymbol -> this.loadBuffersToTopEnvir(server, item.fullPath, maxLoadInMb));
+			};
+			item.isFile.if{ ("file! " ++ item).postln };
 		};
+		this.loadRootFiles(buffers, server, path);
+		buffers.keysValuesDo{|k,v| "Key % contains % buffers now".format(k,v.size).postln};
+		^buffers;
+
 	}
+
+	checkIfHeaderIsSupported { |path|
+		^supportedHeaders.indexOfEqual(
+			PathName(path).extension.toLower
+		).notNil;
+	}
+
+	loadBuffersToTopEnvir { |server, path, maxLoadInMb|
+		var array = PathName(path).files.collect({|file|
+			this.checkIfHeaderIsSupported(file.fullPath).if({
+				if(topEnvironment.includesKey(file.asSymbol), {
+					topEnvironment.at(file.asSymbol).free;
+					//"\tfree buffer".postln;
+				});
+				// populate buffer
+				topEnvironment.put(
+					file.asSymbol,
+					Buffer.read(server,
+						file.fullPath
+					);
+				);
+			})
+		});
+
+		this.buildSynth;
+
+		// reject nil items
+		^array.reject({|item| item.isNil});
+	}
+
+	buildSynth {
+		SynthDef(\VTMingler, {
+			|
+			bufnum, out = 0, loop = 0, rate = 1, spread = 1, pan = 0, amp = 0.5,
+			attack = 0.01, decay = 0.5, sustain = 0.5, release = 1.0, startPos = 0,
+			gate = 1
+			|
+			var numChan = 2, sig, key, frames, env, file;
+			//if(BufChannels.kr(bufnum) == 2, {numChan = 2; "yo".postln;},{numChan = 1; "yaaw".postln;});
+			//numChan = BufChannels.kr(bufnum);
+			frames = BufFrames.kr(bufnum);
+			sig = VTMBufferPlay.ar(
+				numChan,
+				bufnum,
+				rate*BufRateScale.kr(bufnum),
+				1,
+				startPos*frames, loop: loop
+			);
+			env = EnvGen.ar(Env.adsr(attack, decay, sustain, release), gate, doneAction: 2);
+			sig = Splay.ar(sig, spread: spread, center: pan, level: amp);
+			Out.ar(out, (sig*env));
+		}).add;
+
+	}
+
+	/*
 
 	*free { |server|
 		this.freeBuffers;
@@ -72,7 +138,7 @@ VTMingler {
 		buffers.clear;
 	}
 
-	*makeBuffers { |server|
+	*createBuffers { |server|
 		this.freeBuffers;
 
 		PathName(path).entries.do { |subfolder|
@@ -89,9 +155,9 @@ VTMingler {
 		};
 
 		"% samples loaded".format(buffers.size).postln;
-	}
+	}*/
 
-	*addEventTypeFunc {
+	/**addEventTypeFunc {
 		Event.addEventType(\sample, {
 			if (~buf.isNil) {
 				var bank = ~bank;
@@ -112,7 +178,7 @@ VTMingler {
 			~type = \note;
 			currentEnvironment.play
 		})
-	}
+	}*/
 }
 
 
@@ -179,129 +245,4 @@ VTMBufferPlay {
 		);
 
 	}
-}
-
-VTMBufferFiles {
-
-	const <supportedHeaders = #[
-		"wav",
-		"wave",
-		"aiff",
-		"flac",
-		"raw",
-		"ogg",
-		"vorbis",
-		"sdif"
-	];
-
-	*new { arg server, path, maxLoadInMb = 1000;
-		^super.new.init(server, path, maxLoadInMb);
-	}
-
-	init { arg server, path, maxLoadInMb;
-		^this.loadBuffersToTopEnvir(server, path, maxLoadInMb);
-	}
-
-	checkIfHeaderIsSupported { |path|
-		^supportedHeaders.indexOfEqual(
-			PathName(path).extension.toLower
-		).notNil;
-	}
-
-	loadBuffersToTopEnvir { |server, path, maxLoadInMb|
-		var array = PathName(path).files.collect({|file|
-			this.checkIfHeaderIsSupported(file.fullPath).if({
-				if(topEnvironment.includesKey(file.asSymbol), {
-					topEnvironment.at(file.asSymbol).free;
-					//"\tfree buffer".postln;
-				});
-				// populate buffer
-				topEnvironment.put(
-					file.asSymbol,
-					Buffer.read(server,
-						file.fullPath
-					);
-				);
-			})
-		});
-
-		this.buildSynth;
-
-		// reject nil items
-		^array.reject({|item| item.isNil});
-	}
-
-	buildSynth {
-		SynthDef(\VTMingler, {
-			|
-			bufnum, out = 0, loop = 0, rate = 1, spread = 1, pan = 0, amp = 0.5,
-			attack = 0.01, decay = 0.5, sustain = 0.5, release = 1.0, startPos = 0,
-			gate = 1
-			|
-			var numChan, sig, key, frames, env, file;
-			if(BufChannels.kr(bufnum) == 2, {numChan = 2},{numChan = 1});
-			frames = BufFrames.kr(bufnum);
-			sig = VTMBufferPlay.ar(
-				numChan,
-				bufnum,
-				rate*BufRateScale.kr(bufnum),
-				1,
-				startPos*frames, loop: loop
-			);
-			env = EnvGen.ar(Env.adsr(attack, decay, sustain, release), gate, doneAction: 2);
-			sig = Splay.ar(sig, spread: spread, center: pan, level: amp);
-			Out.ar(out, (sig*env));
-		}).add;
-
-	}
-}
-
-VTMBufferFolders {
-
-	var dict;
-
-	*new { arg server, path, maxLoadInMb = 1000;
-
-		^super.new.init(server, path, maxLoadInMb);
-
-	}
-
-	init { arg server, path, maxLoadInMb;
-
-		dict = Dictionary.new;
-
-		^this.loadDirTree(dict, server, path, maxLoadInMb);
-
-	}
-
-	loadRootFiles {|dict, server, path, maxLoadInMb|
-		// If the root of the folder contains files, add them to the key \root
-
-		if(PathName(path).files.size > 0,
-			dict.add(\basepath -> VTMBufferFiles(server, path, maxLoadInMb) );
-		)
-
-	}
-
-	loadDirTree {|dict, server, path, maxLoadInMb|
-
-		PathName(path).folders.collect{|item|
-
-			// Load folder of sounds into an array at dict key of the folder name
-			item.isFolder.if{
-				dict.add(item.folderName.asSymbol -> VTMBufferFiles.new(server, item.fullPath, maxLoadInMb));
-			};
-
-			item.isFile.if{ ("file! " ++ item).postln };
-
-		};
-
-		this.loadRootFiles(dict, server, path);
-
-		dict.keysValuesDo{|k,v| "Key % contains % buffers now".format(k,v.size).postln};
-
-		^dict;
-
-	}
-
 }
