@@ -1,6 +1,6 @@
 VTMingler {
 	classvar <buffers;
-
+	// todo make func that rejects meta mac sheise like: \sounds\._an_example.wav
 	const <supportedHeaders = #[
 		"wav",
 		"wave",
