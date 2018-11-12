@@ -11,7 +11,7 @@ VTMingler {
 		"ogg",
 		"vorbis",
 		"sdif"
-	]; 
+	];
 
 	*initClass {
 		buffers = Dictionary.new;
