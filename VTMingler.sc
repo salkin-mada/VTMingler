@@ -1,6 +1,6 @@
 VTMingler {
 	classvar <buffers;
-	// todo make func that rejects meta mac sheise like: \sounds\._an_example.wav
+	
 	const <supportedHeaders = #[
 		"wav",
 		"wave",
@@ -18,6 +18,8 @@ VTMingler {
 
 	init { arg server, path, maxLoadInMb;
 		buffers = Dictionary.new;
+		this.prAddEventType;
+		"VTMingler Event Type added".postln;
 		^this.loadDirTree(buffers, server, path, maxLoadInMb);
 	}
 
@@ -43,22 +45,25 @@ VTMingler {
 
 	}
 
-	checkIfHeaderIsSupported { |path|
+	// todo make func that rejects meta mac sheise like: \sounds\._an_example.wav
+	checkIfHeaderIsSupported {|path|
 		^supportedHeaders.indexOfEqual(
 			PathName(path).extension.toLower
 		).notNil;
 	}
 
-	loadBuffersToTopEnvir { |server, path, maxLoadInMb|
-		var array = PathName(path).files.collect({|file|
+	loadBuffersToTopEnvir {|server, path, maxLoadInMb|
+		var key;
+		var array = PathName(path).files.collect({|file, i|
 			this.checkIfHeaderIsSupported(file.fullPath).if({
 				if(topEnvironment.includesKey(file.asSymbol), {
 					topEnvironment.at(file.asSymbol).free;
 					//"\tfree buffer".postln;
 				});
+				key = ("fil"++i);
 				// populate buffer
 				topEnvironment.put(
-					file.asSymbol,
+					key.asSymbol, //file.asSymbol,
 					Buffer.read(server,
 						file.fullPath
 					);
@@ -66,36 +71,78 @@ VTMingler {
 			})
 		});
 
-		this.buildSynth;
+		this.addSynthDefinitions;
 
 		// reject nil items
 		^array.reject({|item| item.isNil});
 	}
 
-	buildSynth {
-		SynthDef(\VTMingler, {
+	addSynthDefinitions {
+		SynthDef(\VTMinglerMono, {
 			|
 			bufnum, out = 0, loop = 0, rate = 1, spread = 1, pan = 0, amp = 0.5,
-			attack = 0.01, decay = 0.5, sustain = 0.5, release = 1.0, startPos = 0,
+			attack = 0.01, decay = 0.5, sustain = 0.5, release = 1.0, pos = 0,
 			gate = 1
 			|
-			var numChan = 2, sig, key, frames, env, file;
-			//if(BufChannels.kr(bufnum) == 2, {numChan = 2; "yo".postln;},{numChan = 1; "yaaw".postln;});
-			//numChan = BufChannels.kr(bufnum);
+			var sig, key, frames, env, file;
 			frames = BufFrames.kr(bufnum);
 			sig = VTMBufferPlay.ar(
-				numChan,
+				1,
 				bufnum,
 				rate*BufRateScale.kr(bufnum),
 				1,
-				startPos*frames, loop: loop
+				pos*frames
+				/*BufDur.kr(bufnum) * pos * s.sampleRate*/, 
+				loop: loop
 			);
 			env = EnvGen.ar(Env.adsr(attack, decay, sustain, release), gate, doneAction: 2);
 			sig = Splay.ar(sig, spread: spread, center: pan, level: amp);
 			Out.ar(out, (sig*env));
 		}).add;
 
+		SynthDef(\VTMinglerStereo, {
+			|
+			bufnum, out = 0, loop = 0, rate = 1, spread = 1, pan = 0, amp = 0.5,
+			attack = 0.01, decay = 0.5, sustain = 0.5, release = 1.0, pos = 0,
+			gate = 1
+			|
+			var sig, key, frames, env, file;
+			frames = BufFrames.kr(bufnum);
+			sig = VTMBufferPlay.ar(
+				2,
+				bufnum,
+				rate*BufRateScale.kr(bufnum),
+				1,
+				pos*frames
+				/*BufDur.kr(bufnum) * pos * s.sampleRate*/, 
+				loop: loop
+			);
+			env = EnvGen.ar(Env.adsr(attack, decay, sustain, release), gate, doneAction: 2);
+			sig = Splay.ar(sig, spread: spread, center: pan, level: amp);
+			Out.ar(out, (sig*env));
+		}).add;
 	}
+
+	prAddEventType {
+		Event.addEventType(\VTMingler, {
+			var numChannels;		
+			numChannels = ~bufnum.numChannels;
+			switch(numChannels,
+				1, {
+					~instrument = \VTMinglerMono;
+				},
+				2, {
+					~instrument = \VTMinglerStereo;
+				},
+				{
+					~instrument = \VTMinglerMono;
+				}
+			);
+			~type = \note;
+			currentEnvironment.play
+		})
+	}
+
 
 	/*
 
