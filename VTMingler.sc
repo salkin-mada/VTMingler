@@ -1,6 +1,6 @@
 VTMingler {
 	classvar <buffers;
-	
+
 	const <supportedHeaders = #[
 		"wav",
 		"wave",
@@ -56,7 +56,14 @@ VTMingler {
 		var key;
 		var array = PathName(path).files.collect({|file, i|
 			this.checkIfHeaderIsSupported(file.fullPath).if({
-				if(topEnvironment.includesKey(file.asSymbol), {
+				Buffer.read(server,
+                        file.fullPath,
+                        startFrame: 0,
+                        numFrames: -1,
+                        action: nil,
+                        bufnum: nil
+)
+				/*if(topEnvironment.includesKey(file.asSymbol), {
 					topEnvironment.at(file.asSymbol).free;
 					//"\tfree buffer".postln;
 				});
@@ -67,7 +74,7 @@ VTMingler {
 					Buffer.read(server,
 						file.fullPath
 					);
-				);
+				);*/
 			})
 		});
 
@@ -92,7 +99,7 @@ VTMingler {
 				rate*BufRateScale.kr(bufnum),
 				1,
 				pos*frames
-				/*BufDur.kr(bufnum) * pos * s.sampleRate*/, 
+				/*BufDur.kr(bufnum) * pos * s.sampleRate*/,
 				loop: loop
 			);
 			env = EnvGen.ar(Env.adsr(attack, decay, sustain, release), gate, doneAction: 2);
@@ -114,7 +121,7 @@ VTMingler {
 				rate*BufRateScale.kr(bufnum),
 				1,
 				pos*frames
-				/*BufDur.kr(bufnum) * pos * s.sampleRate*/, 
+				/*BufDur.kr(bufnum) * pos * s.sampleRate*/,
 				loop: loop
 			);
 			env = EnvGen.ar(Env.adsr(attack, decay, sustain, release), gate, doneAction: 2);
@@ -125,7 +132,7 @@ VTMingler {
 
 	prAddEventType {
 		Event.addEventType(\VTMingler, {
-			var numChannels;		
+			var numChannels;
 			numChannels = ~bufnum.numChannels;
 			switch(numChannels,
 				1, {
