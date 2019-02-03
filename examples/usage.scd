@@ -1,10 +1,13 @@
 
-VTMingler.loadAll("X:/lydfiler/mona sigler jenjen");
+VTMingler.loadAll("C:/Users/na/Desktop/lydfiler/andre lydfiler");
+VTMingler.loadAll()
 VTMingler.folders
 VTMingler.list
+VTMingler.files
 VTMingler.buffers.size
 
-VTMingler.buffers[\folder]
+VTMingler.buffers[\deepr].size
+VTMingler.buffers.size
 VTMingler.buffers[\other_sounds][3].play
 
 
@@ -22,26 +25,20 @@ Pdef(\RateLogic,
     Pbind(
         \type, \VTMingler,
         \out, 0,
-		\folder, Pstep([\sidrax_even, \sidrax_more, \other_sounds], 3, inf),
-		\index, Pxrand((0..400), inf), //Pseq([12,2,1,4,7,23], inf),
+		\folder, Pstep([\deepr], 3, inf),
+		\index, 2,
         \dur, Pseq([1], inf),
 		\pos, 0.5,
 		\loop, 1,
-		\rate, Pseq(
-			[
-				Pseq([-0.5], 36),
-				Pseq([-1], 8),
-				Pseq([-0.75], 4),
-				Pseq([-0.83], 24)
-		]*0.3, inf),
+		\rate, Pade(0.3).linlin(-1.0,1.0,0.2,0.9),
         \cutoff, Prand((100..1800)*10, inf),
 		\bass, 0.25, // 0.0 = off, 1.0 = pretty fat add
-		\pan, Pshuf((0..100).linlin(0,100,-50,50)/50, inf),
+		\pan, Pade(0.001),
         \amp, 0.97,
         \attack, 0.3,
         \decay, 0.1,
         \sustain, 0.5,
-        \release, 3.2
+        \release, 0.2
 	).trace([\folder, \index, \rate, \cutoff], prefix: "\n\t");
 ).play(TempoClock(139/60*4))
 )
@@ -73,16 +70,16 @@ Pdef(\ScaleLogic,
     Pbind(
         \type, \VTMingler,
         \tuningOnOff, 1,
-		\out, 2,
-		\folder, Pstep([\sidrax_even, \sidrax_more], 3, inf),
-		\index, Pxrand((197..297), inf),
+		\out, 0,
+		\folder, Pstep([\deepr], 3, inf),
+		\index, 2,
         \dur, Pseq([6,8], inf),
-		\pos, 0.0,
+		\pos, 0.4,
 		\loop, 0,
 		\scale, b,
-		\root, Pstep([0,3], 48/2, inf),
+		\root, 2,
 		\octave, Pxrand([3,4], inf),
-		\degree, Pstep([[3,7,1], [-2, 6, 10]], 48, inf),
+		\degree, Pade(0.3).linlin(-1.0,1.0,0,12).round,
         \cutoff, Prand((100..800)*10, inf),
 		\bass, 0.15, // 0.0 = off, 1.0 = pretty fat add
 		\pan, Pshuf((0..100).linlin(0,100,-50,50)/50, inf),
