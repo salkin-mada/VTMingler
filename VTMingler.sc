@@ -1,3 +1,47 @@
+
+// (
+// fork{
+// 	var supportedExtensions = #[\wav, \wave, \aif, \aiff, \flac];
+// 	var dir = "C:/Users/na/Desktop/lydfiler/andre lydfiler";
+// 	var folders;
+//
+// 	PathName(dir).entries.do{ |entry|
+//
+// 		var entries, rootEntries;
+//
+// 		// entry.folderName.postln;
+//
+// 		if(entry.fullPath.isFile) {
+// 			~rootEntries = entry.asArray.select { |item|
+// 				supportedExtensions.includes(item.extension.asSymbol);
+// 			};
+// 		};
+//
+// 		entries = entry.entries.select { |item|
+// 			("entries\t"++item).postln;
+// 			supportedExtensions.includes(item.extension.asSymbol);
+// 		};
+//
+// 		entries = entries.collect { |item|
+// 			Buffer.readChannel(s, item.fullPath, channels: [0])
+// 		};
+//
+// 		if (entries.isEmpty.not) {
+// 			folders.add(entry.folderName.asSymbol -> entries)
+// 		};
+//
+// 		if (~rootEntries.isEmpty.not) {
+// 			folders.add('root' -> entries)
+// 		}
+// 	};
+//
+// 	"% folders loaded".format(folders.size).postln;
+// }
+// )
+
+
+
+
 VTMingler {
 	classvar <dir, <buffers;
 	classvar makeBuffersFn;
@@ -10,9 +54,9 @@ VTMingler {
 		this.prAddEventType;
 	}
 
-	*loadAll { |argDir, server|
-		dir = argDir;
-		if (dir.isNil) { Error("no directory baby").throw };
+	*loadAll { |path, server|
+		dir = path;
+		if (dir.isNil) { Error("this is not a directory").throw };
 		server = server ? Server.default;
 
 		// create buffers on boot
@@ -34,9 +78,9 @@ VTMingler {
 		"files freed".postln;
 	}
 
-	*get { |bank, index|
+	*get { |folder, index|
 		if (buffers.isNil.not) {
-			var bufList = buffers[bank.asSymbol];
+			var bufList = buffers[folder.asSymbol];
 			if (bufList.isNil.not) {
 				index = index % bufList.size;
 				^bufList[index]
@@ -49,15 +93,21 @@ VTMingler {
 		^buffers.keys
 	}
 
+	/**files {
+		^buffers.do { |folderName, buffers|
+			"% %".format(folderName, buffers.size).postln
+		}
+	}*/
+
 	*list {
-		^buffers.keysValuesDo { |bankName, buffers|
-			"% [%]".format(bankName, buffers.size).postln
+		^buffers.keysValuesDo { |folderName, buffers|
+			"% [%]".format(folderName, buffers.size).postln
 		}
 	}
 
 	*prFreeBuffers {
-		buffers.do { |banks|
-			banks.do { |buf|
+		buffers.do { |folders|
+			folders.do { |buf|
 				if (buf.isNil.not) {
 					buf.free
 				}
