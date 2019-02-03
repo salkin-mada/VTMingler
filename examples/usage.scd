@@ -1,5 +1,5 @@
 
-VTMingler.loadAll("X:/lydfiler/mona sigler jenjen");
+VTMingler.loadAll("X:/lydfiler/mona sigler generate spasm");
 VTMingler.folders
 VTMingler.list
 VTMingler.buffers.size
@@ -22,8 +22,8 @@ Pdef(\RateLogic,
     Pbind(
         \type, \VTMingler,
         \out, 0,
-		\folder, Pstep([\sidrax_even, \sidrax_more, \other_sounds], 3, inf),
-		\index, Pxrand((0..400), inf), //Pseq([12,2,1,4,7,23], inf),
+		\folder, Pstep([\choir, /*\crazyy,*/ /*\orkestra_musak_render*/], 3, inf),
+		\index, Pxrand((0..40), inf), //Pseq([12,2,1,4,7,23], inf),
         \dur, Pseq([1], inf),
 		\pos, 0.5,
 		\loop, 1,
@@ -35,7 +35,7 @@ Pdef(\RateLogic,
 				Pseq([-0.83], 24)
 		]*0.3, inf),
         \cutoff, Prand((100..1800)*10, inf),
-		\bass, 0.25, // 0.0 = off, 1.0 = pretty fat add
+		\bass, 0.25, // 0.0 = bipassed, 1.0 = double the amount of bassy content
 		\pan, Pshuf((0..100).linlin(0,100,-50,50)/50, inf),
         \amp, 0.97,
         \attack, 0.3,
@@ -73,25 +73,25 @@ Pdef(\ScaleLogic,
     Pbind(
         \type, \VTMingler,
         \tuningOnOff, 1,
-		\out, 2,
-		\folder, Pstep([\sidrax_even, \sidrax_more], 3, inf),
+		\out, 0,
+		\folder, Pstep([\choir, \crazyy, /*\orkestra_musak_render*/], 12, inf),
 		\index, Pxrand((197..297), inf),
-        \dur, Pseq([6,8], inf),
-		\pos, 0.0,
+        \dur, Pseq([/*6,8,*/1], inf),
+		\pos, Pstep([0,0,0.5,0.8], 3, inf),
 		\loop, 0,
 		\scale, b,
-		\root, Pstep([0,3], 48/2, inf),
-		\octave, Pxrand([3,4], inf),
+		\root, Pstep([0,4], 48/2, inf),
+		\octave, Pxrand([4,5], inf),
 		\degree, Pstep([[3,7,1], [-2, 6, 10]], 48, inf),
-        \cutoff, Prand((100..800)*10, inf),
+        \cutoff, Prand((100..1200)*10, inf),
 		\bass, 0.15, // 0.0 = off, 1.0 = pretty fat add
 		\pan, Pshuf((0..100).linlin(0,100,-50,50)/50, inf),
-        \amp, 0.58,
+        \amp, 0.88,
         \attack, 0.3,
         \decay, 0.1,
         \sustain, 0.5,
-        \release, 10.2
-	).trace([\folder, \index, \degree], prefix: "\n\t");
+        \release, 1.2
+	).trace([\folder, \index, \degree, \pos, \cutoff], prefix: "\n\t");
 ).play(TempoClock(139/60*4))
 )
 
@@ -106,6 +106,61 @@ Pdef('ScaleLogic').stop
 
 
 
+
+
+
+
+(
+b = Scale.minor;
+b.tuning_(\werckmeister);
+)
+
+
+(
+Pdef(\ScaleLogic,
+    Pbind(
+        \type, \VTMingler,
+        \tuningOnOff, 1,
+		\out, 0,
+		\folder, Pstep([\orks2], 12, inf),
+		\index, Pseq(
+			[
+				Pseq([0,3,7], 128*2),
+				Pseq([0,3,12,13], 64),
+				Pseq([0,3,7], 64),
+				Pseq([76,87,86,85,3], 128),
+				Pseq([87,3,86,85,76], 64),
+				Pseq([3,87,86,85,76], 64),
+				Pseq([0,3,12,13], 64),
+				Pseq([0,3,7], 64),
+		], inf),
+        \dur,
+		Pseq(
+			[
+				Pseq([1], 128),
+				Pseq([1], 64)+Prand([0.07,-0.08,0.0,0.1], 64),
+				Pseq([0.9], 64)+Prand([0.1,-0.1,0.0, 0.3, 0.2, 0.4], 64)
+			],
+			inf),
+		\pos, Pstep([0,0,0.3,0.5], 3, inf),
+		\loop, 0,
+		\scale, b,
+		\root, Pstep([0,4], 48/2, inf),
+		\octave, Pxrand([4,5], inf),
+		\degree, Pseq([1,3,6,9,2], inf),
+        \cutoff, Prand((100..1200)*10, inf),
+		\bass, 0.15, // 0.0 = off, 1.0 = pretty fat add
+		\pan, Pshuf((0..100).linlin(0,100,-50,50)/50, inf),
+        \amp, 3.38,
+        \attack, 0.3,
+        \decay, 0.1,
+        \sustain, 0.5,
+        \release, 1.2
+	).trace([\folder, \dur, \index, \degree, \pos, \cutoff], prefix: "\n\t");
+).play(TempoClock(139/60*4))
+)
+
+Pdef('ScaleLogic').stop
 
 
 
