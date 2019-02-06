@@ -93,11 +93,11 @@ VTMingler {
 		^buffers.keys
 	}
 
-	/**files {
+	*files {
 		^buffers.do { |folderName, buffers|
 			"% %".format(folderName, buffers.size).postln
 		}
-	}*/
+	}
 
 	*list {
 		^buffers.keysValuesDo { |folderName, buffers|
